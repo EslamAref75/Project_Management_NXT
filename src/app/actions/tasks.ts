@@ -9,6 +9,7 @@ import { createProjectNotification } from "./project-notifications"
 import { logActivity } from "@/lib/activity-logger"
 import { hasPermissionOrRole } from "@/lib/rbac"
 import { PERMISSIONS } from "@/lib/permissions"
+import { isTaskBlocked } from "./dependencies"
 
 const createTaskSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -81,7 +82,7 @@ export async function getTasksWithFilters(params: {
         if (status.length > 0) {
             const statusIds: number[] = []
             const statusNames: string[] = []
-            
+
             status.forEach(s => {
                 const id = parseInt(s)
                 if (!isNaN(id)) {
@@ -90,7 +91,7 @@ export async function getTasksWithFilters(params: {
                     statusNames.push(s)
                 }
             })
-            
+
             if (statusIds.length > 0) {
                 statusConditions.push({ taskStatusId: { in: statusIds } })
             }
@@ -619,7 +620,7 @@ export async function updateTask(taskId: number, formData: FormData) {
         }
 
         const updateData: any = {}
-        
+
         if (validated.data.title !== undefined && validated.data.title.trim() !== "") {
             updateData.title = validated.data.title.trim()
         }
@@ -648,15 +649,15 @@ export async function updateTask(taskId: number, formData: FormData) {
                 ["admin", "project_manager", "team_lead"],
                 existingTask.projectId
             )
-            
+
             if (!hasAssignPermission && !isCreator) {
                 return { error: "Permission denied: You don't have permission to assign tasks" }
             }
 
             const newAssigneeIds = validated.data.assigneeIds
             const currentAssigneeIds = currentTask.assignees.map(a => a.id)
-            
-            const hasChanged = 
+
+            const hasChanged =
                 newAssigneeIds.length !== currentAssigneeIds.length ||
                 !newAssigneeIds.every(id => currentAssigneeIds.includes(id)) ||
                 !currentAssigneeIds.every(id => newAssigneeIds.includes(id))
@@ -735,9 +736,9 @@ export async function updateTask(taskId: number, formData: FormData) {
         return { success: true }
     } catch (e: any) {
         console.error("Task update error:", e)
-        return { 
-            error: "Failed to update task", 
-            details: e.message || "Unknown error occurred. Check console for details." 
+        return {
+            error: "Failed to update task",
+            details: e.message || "Unknown error occurred. Check console for details."
         }
     }
 }
@@ -787,7 +788,7 @@ export async function updateTaskStatus(taskId: number, status: string | number, 
             // Fetch the task status to get its name
             const taskStatus = await prisma.taskStatus.findUnique({
                 where: { id: taskStatusId },
-                select: { name: true, isActive: true }
+                select: { name: true, isActive: true, isFinal: true }
             })
 
             if (!taskStatus) {
@@ -798,12 +799,28 @@ export async function updateTaskStatus(taskId: number, status: string | number, 
                 return { error: "Cannot assign inactive task status" }
             }
 
+            // Check if attempting to complete a blocked task
+            if (taskStatus.isFinal) {
+                const blocked = await isTaskBlocked(taskId)
+                if (blocked) {
+                    return { error: "Cannot complete task: This task is blocked by incomplete dependencies." }
+                }
+            }
+
             statusName = taskStatus.name
             updateData = {
                 taskStatusId: taskStatusId,
                 status: statusName // Update legacy field for backward compatibility
             }
         } else {
+            // Check if attempting to complete a blocked task (legacy status)
+            if (statusName === "completed") {
+                const blocked = await isTaskBlocked(taskId)
+                if (blocked) {
+                    return { error: "Cannot complete task: This task is blocked by incomplete dependencies." }
+                }
+            }
+
             // Legacy string status
             updateData = { status: statusName }
         }
@@ -885,7 +902,7 @@ export async function deleteTask(taskId: number) {
         await prisma.task.delete({
             where: { id: taskId }
         })
-        
+
         await logActivity({
             actionType: "task_deleted",
             actionCategory: "task",
@@ -899,7 +916,7 @@ export async function deleteTask(taskId: number) {
             entityType: "task",
             entityId: taskId,
         })
-        
+
         revalidatePath(`/dashboard/projects/${task.projectId}`)
         revalidatePath("/dashboard/tasks")
         return { success: true }
