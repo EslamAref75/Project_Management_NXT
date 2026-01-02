@@ -11,7 +11,8 @@ import {
     MoreVertical,
     Calendar,
     Users,
-    AlertTriangle
+    AlertTriangle,
+    CheckCircle2
 } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
@@ -25,6 +26,7 @@ import {
 import { ProjectEditDialog } from "./project-edit-dialog"
 import { ProjectNotificationBell } from "@/components/project-notifications/project-notification-bell"
 import { MarkUrgentDialog } from "./mark-urgent-dialog"
+import { RemoveUrgentDialog } from "./remove-urgent-dialog"
 import { useState } from "react"
 
 interface ProjectHeaderProps {
@@ -112,9 +114,19 @@ export function ProjectHeader({ project, stats, canEdit, canMarkUrgent = false }
                                     <MarkUrgentDialog projectId={project.id} projectName={project.name}>
                                         <div className="flex items-center w-full">
                                             <AlertTriangle className="h-4 w-4 mr-2" />
-                                            Mark as Urgent
+                                            Make Urgent
                                         </div>
                                     </MarkUrgentDialog>
+                                </DropdownMenuItem>
+                            )}
+                            {canMarkUrgent && project.priority === "urgent" && (
+                                <DropdownMenuItem asChild>
+                                    <RemoveUrgentDialog projectId={project.id} projectName={project.name}>
+                                        <div className="flex items-center w-full">
+                                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                                            Remove Urgent
+                                        </div>
+                                    </RemoveUrgentDialog>
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuItem disabled>

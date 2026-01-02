@@ -71,24 +71,51 @@ export async function getUserPermissions(
 
 /**
  * Check if user has a specific permission
+ * Supports both legacy role field and RBAC system
  */
 export async function hasPermission(
   userId: number,
   permission: string,
   projectId?: number
 ): Promise<boolean> {
-  // Super admin check (legacy role field)
+  // Check legacy role field first (for backward compatibility)
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { role: true },
   })
 
-  if (user?.role === "admin") {
-    return true // Legacy admin has all permissions
+  // Legacy admin and project_manager roles have all permissions
+  if (user?.role === "admin" || user?.role === "project_manager") {
+    return true
   }
 
+  // Check RBAC permissions
   const permissions = await getUserPermissions(userId, projectId)
   return permissions.includes(permission)
+}
+
+/**
+ * Check if user has permission with legacy role fallback
+ * This is a convenience function that checks both RBAC and legacy roles
+ */
+export async function hasPermissionOrRole(
+  userId: number,
+  permission: string,
+  allowedLegacyRoles: string[] = ["admin", "project_manager"],
+  projectId?: number
+): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  })
+
+  // Check legacy roles
+  if (user?.role && allowedLegacyRoles.includes(user.role)) {
+    return true
+  }
+
+  // Check RBAC permissions
+  return hasPermission(userId, permission, projectId)
 }
 
 /**

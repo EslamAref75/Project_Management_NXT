@@ -18,6 +18,31 @@ export async function getDashboardSummary() {
         const todayStart = startOfDay(new Date())
         const todayEnd = endOfDay(new Date())
 
+        // Fetch active project statuses and task statuses
+        const [projectStatusesResult, taskStatusesResult] = await Promise.all([
+            prisma.projectStatus?.findMany({
+                where: { isActive: true },
+                orderBy: { orderIndex: "asc" },
+                select: { id: true, name: true, color: true }
+            }).catch(() => []),
+            prisma.taskStatus?.findMany({
+                where: { isActive: true },
+                orderBy: { orderIndex: "asc" },
+                select: { id: true, name: true, color: true, isBlocking: true, isFinal: true }
+            }).catch(() => [])
+        ])
+
+        const projectStatuses = projectStatusesResult || []
+        const taskStatuses = taskStatusesResult || []
+
+        // Find blocking task status (for blocked tasks count)
+        const blockingTaskStatus = taskStatuses.find(ts => ts.isBlocking)
+        const blockingTaskStatusId = blockingTaskStatus?.id
+
+        // Find final task status (for completed tasks)
+        const finalTaskStatus = taskStatuses.find(ts => ts.isFinal)
+        const finalTaskStatusId = finalTaskStatus?.id
+
         // Projects Statistics
         const projectsWhere = isAdmin ? {} : {
             OR: [
@@ -27,10 +52,62 @@ export async function getDashboardSummary() {
             ]
         }
 
+        // Count projects by status
+        const projectStatusCounts: Record<number, number> = {}
+        if (projectStatuses.length > 0) {
+            for (const status of projectStatuses) {
+                const count = await prisma.project.count({
+                    where: {
+                        ...projectsWhere,
+                        projectStatusId: status.id
+                    }
+                })
+                projectStatusCounts[status.id] = count
+            }
+        }
+
+        // Also count by legacy status for backward compatibility
+        const legacyActiveCount = await prisma.project.count({
+            where: {
+                ...projectsWhere,
+                status: "active",
+                projectStatusId: null
+            }
+        })
+        const legacyOnHoldCount = await prisma.project.count({
+            where: {
+                ...projectsWhere,
+                status: "on_hold",
+                projectStatusId: null
+            }
+        })
+
+        // Count tasks by status
+        const taskStatusCounts: Record<number, number> = {}
+        const tasksWhere = isAdmin ? {} : {
+            project: {
+                OR: [
+                    { projectManagerId: userId },
+                    { createdById: userId },
+                    { projectUsers: { some: { userId } } }
+                ]
+            }
+        }
+        
+        if (taskStatuses.length > 0) {
+            for (const status of taskStatuses) {
+                const count = await prisma.task.count({
+                    where: {
+                        ...tasksWhere,
+                        taskStatusId: status.id
+                    }
+                })
+                taskStatusCounts[status.id] = count
+            }
+        }
+
         const [
             totalProjects,
-            activeProjects,
-            onHoldProjects,
             totalTasks,
             myTasks,
             blockedTasks,
@@ -41,22 +118,6 @@ export async function getDashboardSummary() {
         ] = await Promise.all([
             // Total Projects
             prisma.project.count({ where: projectsWhere }),
-
-            // Active Projects
-            prisma.project.count({
-                where: {
-                    ...projectsWhere,
-                    status: "active"
-                }
-            }),
-
-            // On Hold Projects
-            prisma.project.count({
-                where: {
-                    ...projectsWhere,
-                    status: "on_hold"
-                }
-            }),
 
             // Total Tasks
             prisma.task.count({
@@ -78,10 +139,17 @@ export async function getDashboardSummary() {
                 }
             }),
 
-            // Blocked Tasks
+            // Blocked Tasks (using blocking status or legacy "waiting")
             prisma.task.count({
                 where: {
-                    status: "waiting",
+                    OR: (() => {
+                        const conditions: any[] = []
+                        if (blockingTaskStatusId) {
+                            conditions.push({ taskStatusId: blockingTaskStatusId })
+                        }
+                        conditions.push({ status: "waiting", taskStatusId: null })
+                        return conditions
+                    })(),
                     ...(isAdmin ? {} : {
                         project: {
                             OR: [
@@ -94,11 +162,18 @@ export async function getDashboardSummary() {
                 }
             }),
 
-            // Overdue Tasks
+            // Overdue Tasks (not in final status)
             prisma.task.count({
                 where: {
                     dueDate: { lt: new Date() },
-                    status: { not: "completed" },
+                    OR: (() => {
+                        const conditions: any[] = []
+                        if (finalTaskStatusId) {
+                            conditions.push({ taskStatusId: { not: finalTaskStatusId } })
+                        }
+                        conditions.push({ status: { not: "completed" }, taskStatusId: null })
+                        return conditions
+                    })(),
                     ...(isAdmin ? {} : {
                         OR: [
                             { assignees: { some: { id: userId } } },
@@ -115,7 +190,7 @@ export async function getDashboardSummary() {
                 }
             }),
 
-            // Today's Tasks
+            // Today's Tasks (not in final status)
             prisma.task.count({
                 where: {
                     assignees: { some: { id: userId } },
@@ -123,11 +198,18 @@ export async function getDashboardSummary() {
                         gte: todayStart,
                         lte: todayEnd
                     },
-                    status: { not: "completed" }
+                    OR: (() => {
+                        const conditions: any[] = []
+                        if (finalTaskStatusId) {
+                            conditions.push({ taskStatusId: { not: finalTaskStatusId } })
+                        }
+                        conditions.push({ status: { not: "completed" }, taskStatusId: null })
+                        return conditions
+                    })()
                 }
             }),
 
-            // Completed Today
+            // Completed Today (using final status or legacy "completed")
             prisma.task.count({
                 where: {
                     assignees: { some: { id: userId } },
@@ -135,7 +217,14 @@ export async function getDashboardSummary() {
                         gte: todayStart,
                         lte: todayEnd
                     },
-                    status: "completed"
+                    OR: (() => {
+                        const conditions: any[] = []
+                        if (finalTaskStatusId) {
+                            conditions.push({ taskStatusId: finalTaskStatusId })
+                        }
+                        conditions.push({ status: "completed", taskStatusId: null })
+                        return conditions
+                    })()
                 }
             }),
 
@@ -180,15 +269,29 @@ export async function getDashboardSummary() {
             success: true,
             projects: {
                 total: totalProjects,
-                active: activeProjects,
-                onHold: onHoldProjects
+                statusCounts: projectStatusCounts,
+                legacyActive: legacyActiveCount,
+                legacyOnHold: legacyOnHoldCount
             },
+            projectStatuses: projectStatuses.map(ps => ({
+                id: ps.id,
+                name: ps.name,
+                color: ps.color
+            })),
             tasks: {
                 total: totalTasks,
                 myTasks: myTasks,
                 blocked: blockedTasks,
-                overdue: overdueTasks
+                overdue: overdueTasks,
+                statusCounts: taskStatusCounts
             },
+            taskStatuses: taskStatuses.map(ts => ({
+                id: ts.id,
+                name: ts.name,
+                color: ts.color,
+                isBlocking: ts.isBlocking,
+                isFinal: ts.isFinal
+            })),
             todayTasks: {
                 total: todaysTasks,
                 completed: completedToday

@@ -3,9 +3,20 @@
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { z } from "zod"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { logActivity } from "@/lib/activity-logger"
+import { hasPermissionOrRole } from "@/lib/rbac"
+import { PERMISSIONS } from "@/lib/permissions"
+
+// Helper function to check task status management permission
+async function checkTaskStatusPermission(userId: number): Promise<boolean> {
+    return hasPermissionOrRole(
+        userId,
+        PERMISSIONS.SETTINGS.TASK_STATUS_MANAGE,
+        ["admin", "project_manager"]
+    )
+}
 
 const taskStatusSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -60,8 +71,9 @@ export async function createTaskStatus(formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    if (session.user.role !== "admin") {
-        return { error: "Only admins can create task statuses" }
+    const hasPermission = await checkTaskStatusPermission(parseInt(session.user.id))
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to manage task statuses" }
     }
 
     // Check if TaskStatus model exists in Prisma client

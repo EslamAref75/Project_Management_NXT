@@ -104,7 +104,7 @@ export function RoleEditDialog({ open, onOpenChange, role, permissions, permissi
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Content Manager"
                 required
-                disabled={role.isSystemRole && role.name === "Super Admin"}
+                disabled={role.isSystemRole && role.name === "System Admin"}
               />
             </div>
             <div className="space-y-2">

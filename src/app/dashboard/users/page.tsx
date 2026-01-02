@@ -1,5 +1,6 @@
 import { getUsers } from "@/app/actions/users"
 import { getTeams } from "@/app/actions/teams"
+import { getRoles } from "@/app/actions/rbac"
 import { UserDialog } from "@/components/users/user-dialog"
 import { UserListActions } from "@/components/users/user-actions"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +18,7 @@ import { formatDistanceToNow } from "date-fns"
 export default async function UsersPage() {
     const users = await getUsers()
     const teams = await getTeams() // For the dialog
+    const roles = await getRoles().catch(() => []) // Fetch roles, fallback to empty array if error
 
     return (
         <div className="space-y-6">
@@ -27,7 +29,7 @@ export default async function UsersPage() {
                         Manage users and their roles.
                     </p>
                 </div>
-                <UserDialog teams={teams} />
+                <UserDialog teams={teams} roles={roles} />
             </div>
 
             <div className="rounded-md border bg-card">

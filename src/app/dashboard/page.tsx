@@ -57,20 +57,46 @@ export default async function DashboardPage() {
                             href="/dashboard/projects"
                             variant="info"
                         />
-                        <StatCard
-                            title="Active Projects"
-                            value={summary.projects?.active || 0}
-                            icon="FolderOpen"
-                            href="/dashboard/projects?status=active"
-                            variant="success"
-                        />
-                        <StatCard
-                            title="On Hold Projects"
-                            value={summary.projects?.onHold || 0}
-                            icon="FolderX"
-                            href="/dashboard/projects?status=on_hold"
-                            variant="warning"
-                        />
+                        {/* Dynamic Project Status Cards */}
+                        {summary.projectStatuses && summary.projectStatuses.length > 0 ? (
+                            summary.projectStatuses.map((status: any) => {
+                                const count = summary.projects?.statusCounts?.[status.id] || 0
+                                // Only show statuses with projects or if it's a default status
+                                if (count === 0) return null
+                                return (
+                                    <StatCard
+                                        key={status.id}
+                                        title={status.name}
+                                        value={count}
+                                        icon="FolderOpen"
+                                        href={`/dashboard/projects?status=${status.id}`}
+                                        variant="default"
+                                    />
+                                )
+                            })
+                        ) : (
+                            // Fallback to legacy statuses if no dynamic statuses exist
+                            <>
+                                {(summary.projects?.legacyActive || 0) > 0 && (
+                                    <StatCard
+                                        title="Active Projects"
+                                        value={summary.projects?.legacyActive || 0}
+                                        icon="FolderOpen"
+                                        href="/dashboard/projects?status=active"
+                                        variant="success"
+                                    />
+                                )}
+                                {(summary.projects?.legacyOnHold || 0) > 0 && (
+                                    <StatCard
+                                        title="On Hold Projects"
+                                        value={summary.projects?.legacyOnHold || 0}
+                                        icon="FolderX"
+                                        href="/dashboard/projects?status=on_hold"
+                                        variant="warning"
+                                    />
+                                )}
+                            </>
+                        )}
                     </>
                 )}
 
@@ -109,6 +135,28 @@ export default async function DashboardPage() {
                     variant="danger"
                 />
             </div>
+
+            {/* Task Status Cards */}
+            {summary.taskStatuses && summary.taskStatuses.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <h2 className="col-span-full text-lg font-semibold">Task Statuses</h2>
+                    {summary.taskStatuses.map((status: any) => {
+                        const count = summary.tasks?.statusCounts?.[status.id] || 0
+                        // Only show statuses with tasks
+                        if (count === 0) return null
+                        return (
+                            <StatCard
+                                key={status.id}
+                                title={status.name}
+                                value={count}
+                                icon="CheckSquare"
+                                href={`/dashboard/tasks?status=${status.id}`}
+                                variant="default"
+                            />
+                        )
+                    })}
+                </div>
+            )}
 
             {/* Today's Tasks Statistics */}
             <div className="grid gap-4 md:grid-cols-2">

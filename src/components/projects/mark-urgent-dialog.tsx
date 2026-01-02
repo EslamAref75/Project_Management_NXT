@@ -90,14 +90,22 @@ export function MarkUrgentDialog({ projectId, projectName, children }: MarkUrgen
 
     return (
         <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <AlertDialogTrigger asChild>
-                {children || (
+            {children ? (
+                <div onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setConfirmOpen(true)
+                }}>
+                    {children}
+                </div>
+            ) : (
+                <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm">
                         <AlertTriangle className="h-4 w-4 mr-2" />
-                        Mark as Urgent
+                        Make Urgent
                     </Button>
-                )}
-            </AlertDialogTrigger>
+                </AlertDialogTrigger>
+            )}
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2">
@@ -105,13 +113,13 @@ export function MarkUrgentDialog({ projectId, projectName, children }: MarkUrgen
                         Confirm Urgent Priority
                     </AlertDialogTitle>
                     <AlertDialogDescription className="pt-2">
-                        You are about to mark this project as Urgent.
+                        This will escalate the project as urgent and notify the team leader.
                         <br />
                         <br />
-                        This will notify all assigned leaders and escalate attention immediately.
+                        All assigned team members will receive high-priority notifications.
                         <br />
                         <br />
-                        Are you sure you want to continue?
+                        Are you sure you want to proceed?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

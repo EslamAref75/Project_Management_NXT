@@ -74,6 +74,10 @@ export const PERMISSIONS = {
     PROJECT_EDIT: "settings.project.edit",
     USER_READ: "settings.user.read",
     USER_EDIT: "settings.user.edit",
+    // Project Metadata Management
+    PROJECT_TYPE_MANAGE: "settings.project_type.manage",
+    PROJECT_STATUS_MANAGE: "settings.project_status.manage",
+    TASK_STATUS_MANAGE: "settings.task_status.manage",
   },
 
   // Notifications Management
@@ -129,56 +133,103 @@ export const PERMISSION_MODULES = {
  * Default roles and their permissions
  */
 export const DEFAULT_ROLES = {
-  SUPER_ADMIN: {
-    name: "Super Admin",
+  SYSTEM_ADMIN: {
+    name: "System Admin",
     description: "Full system access with all permissions",
     isSystemRole: true,
     permissions: Object.values(PERMISSIONS).flatMap(module => Object.values(module)),
   },
-  SYSTEM_ADMIN: {
-    name: "System Admin",
-    description: "Manage users, teams, projects, and global settings",
+  PROJECT_MANAGER: {
+    name: "Project Manager",
+    description: "Manage projects, tasks, teams, and dependencies",
     isSystemRole: true,
     permissions: [
-      ...Object.values(PERMISSIONS.USER),
-      ...Object.values(PERMISSIONS.TEAM),
+      // Project Management
       ...Object.values(PERMISSIONS.PROJECT),
+      // Task Management
       ...Object.values(PERMISSIONS.TASK),
+      // Dependency Management
       ...Object.values(PERMISSIONS.DEPENDENCY),
+      // Team Management (limited)
+      PERMISSIONS.TEAM.READ,
+      PERMISSIONS.TEAM.UPDATE,
+      PERMISSIONS.TEAM.ADD_MEMBER,
+      PERMISSIONS.TEAM.REMOVE_MEMBER,
+      PERMISSIONS.TEAM.ASSIGN_PROJECT,
+      PERMISSIONS.TEAM.REMOVE_PROJECT,
+      // Today's Tasks
       ...Object.values(PERMISSIONS.TODAY_TASK),
-      ...Object.values(PERMISSIONS.SETTINGS),
-      PERMISSIONS.NOTIFICATION.VIEW,
-      PERMISSIONS.NOTIFICATION.MANAGE,
-      ...Object.values(PERMISSIONS.LOG),
-      PERMISSIONS.ROLE.READ,
-    ],
-  },
-  PROJECT_ADMIN: {
-    name: "Project Admin",
-    description: "Manage assigned projects, tasks, and dependencies",
-    isSystemRole: true,
-    permissions: [
-      PERMISSIONS.PROJECT.READ,
-      PERMISSIONS.PROJECT.UPDATE,
-      PERMISSIONS.PROJECT.MANAGE_SETTINGS,
-      ...Object.values(PERMISSIONS.TASK),
-      ...Object.values(PERMISSIONS.DEPENDENCY),
-      ...Object.values(PERMISSIONS.TODAY_TASK),
+      // Settings (project-level)
       PERMISSIONS.SETTINGS.PROJECT_READ,
       PERMISSIONS.SETTINGS.PROJECT_EDIT,
+      PERMISSIONS.SETTINGS.PROJECT_TYPE_MANAGE,
+      PERMISSIONS.SETTINGS.PROJECT_STATUS_MANAGE,
+      PERMISSIONS.SETTINGS.TASK_STATUS_MANAGE,
+      // Notifications
       PERMISSIONS.NOTIFICATION.VIEW,
+      PERMISSIONS.NOTIFICATION.MANAGE,
+      // Activity Logs
       PERMISSIONS.LOG.VIEW,
+      PERMISSIONS.LOG.VIEW_DETAILS,
+      // User Management (read-only for assignment)
+      PERMISSIONS.USER.READ,
+      // Reports
+      PERMISSIONS.REPORT.VIEW,
+      PERMISSIONS.REPORT.EXPORT,
+      PERMISSIONS.REPORT.GENERATE,
     ],
   },
-  AUDIT_ADMIN: {
-    name: "Audit Admin",
-    description: "Read-only access to activity logs and audit information",
+  TEAM_LEAD: {
+    name: "Team Lead",
+    description: "Manage team tasks, dependencies, and team members",
     isSystemRole: true,
     permissions: [
-      ...Object.values(PERMISSIONS.LOG),
-      PERMISSIONS.USER.READ,
+      // Project Management (read-only)
       PERMISSIONS.PROJECT.READ,
+      // Task Management (for team tasks)
+      ...Object.values(PERMISSIONS.TASK),
+      // Dependency Management
+      ...Object.values(PERMISSIONS.DEPENDENCY),
+      // Team Management (own team only)
+      PERMISSIONS.TEAM.READ,
+      PERMISSIONS.TEAM.UPDATE,
+      PERMISSIONS.TEAM.ADD_MEMBER,
+      PERMISSIONS.TEAM.REMOVE_MEMBER,
+      // Today's Tasks
+      ...Object.values(PERMISSIONS.TODAY_TASK),
+      // Settings (read-only)
+      PERMISSIONS.SETTINGS.PROJECT_READ,
+      // Notifications
+      PERMISSIONS.NOTIFICATION.VIEW,
+      // Activity Logs (team scope)
+      PERMISSIONS.LOG.VIEW,
+      PERMISSIONS.LOG.VIEW_DETAILS,
+      // User Management (read-only for team members)
+      PERMISSIONS.USER.READ,
+      // Reports (view only)
+      PERMISSIONS.REPORT.VIEW,
+    ],
+  },
+  DEVELOPER: {
+    name: "Developer",
+    description: "Basic task management and updates",
+    isSystemRole: true,
+    permissions: [
+      // Project Management (read-only)
+      PERMISSIONS.PROJECT.READ,
+      // Task Management (assigned tasks only)
       PERMISSIONS.TASK.READ,
+      PERMISSIONS.TASK.UPDATE,
+      PERMISSIONS.TASK.CHANGE_STATUS,
+      PERMISSIONS.TASK.CHANGE_PRIORITY,
+      // Dependency Management (read-only)
+      PERMISSIONS.DEPENDENCY.READ,
+      // Today's Tasks
+      ...Object.values(PERMISSIONS.TODAY_TASK),
+      // Notifications
+      PERMISSIONS.NOTIFICATION.VIEW,
+      // Activity Logs (own logs)
+      PERMISSIONS.LOG.VIEW,
     ],
   },
 } as const

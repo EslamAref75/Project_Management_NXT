@@ -6,6 +6,8 @@ import { authOptions } from "@/lib/auth"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/activity-logger"
+import { hasPermissionOrRole } from "@/lib/rbac"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const projectSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -66,9 +68,7 @@ export async function getProjectsWithFilters(params: {
 
         // Search filter
         if (search) {
-            where.OR = [
-                { name: { contains: search } }, // Removed mode: "insensitive" for SQLite compatibility
-            ]
+            where.name = { contains: search }
         }
 
         // Category filter
@@ -76,9 +76,31 @@ export async function getProjectsWithFilters(params: {
             where.type = { in: category }
         }
 
-        // Status filter
+        // Status filter - support both status IDs (for dynamic statuses) and legacy status names
         if (status.length > 0) {
-            where.status = { in: status }
+            const statusIds: number[] = []
+            const statusNames: string[] = []
+
+            status.forEach(s => {
+                const id = parseInt(s)
+                if (!isNaN(id)) {
+                    statusIds.push(id)
+                } else {
+                    statusNames.push(s)
+                }
+            })
+
+            const statusConditions: any[] = []
+            if (statusIds.length > 0) {
+                statusConditions.push({ projectStatusId: { in: statusIds } })
+            }
+            if (statusNames.length > 0) {
+                statusConditions.push({ status: { in: statusNames }, projectStatusId: null })
+            }
+
+            if (statusConditions.length > 0) {
+                where.OR = statusConditions
+            }
         }
 
         // Date range filter
@@ -101,19 +123,26 @@ export async function getProjectsWithFilters(params: {
         }
 
         // Role-based filtering
-        if (session.user.role !== "admin") {
-            // For non-admins, show only projects they're assigned to
+        const isSystemAdmin = session.user.role === "admin" || session.user.role === "System Admin"
+        const isProjectManager = session.user.role === "project_manager" || session.user.role === "Project Manager"
+
+        // If not System Admin or Project Manager, restrict visibility
+        if (!isSystemAdmin && !isProjectManager) {
+            // For other roles (devs, team leads etc), show only projects they're assigned to
+            // TODO: Enhance this with proper granular permissions later (e.g. Team Lead might see team projects)
             const userConditions = [
                 { projectManagerId: parseInt(session.user.id) },
                 { createdById: parseInt(session.user.id) },
+                // Also include projects where they are a member (via ProjectUser table) if applicable
+                // For now keeping simple legacy behavior for non-PMs
             ]
-            
+
             if (where.OR) {
                 where.AND = [
                     ...(where.AND || []),
-                    { OR: [...where.OR, ...userConditions] }
+                    { OR: [...where.OR, ...userConditions] } // Combine existing OR with user restriction
                 ]
-                delete where.OR
+                delete where.OR // Move existing OR inside the AND
             } else {
                 where.OR = userConditions
             }
@@ -162,6 +191,17 @@ export async function getProjectsWithFilters(params: {
 export async function createProject(formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
+
+    // Check permission using RBAC with legacy role fallback
+    const hasPermission = await hasPermissionOrRole(
+        parseInt(session.user.id),
+        PERMISSIONS.PROJECT.CREATE,
+        ["admin", "project_manager"]
+    )
+
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to create projects" }
+    }
 
     const name = formData.get("name") as string
     const type = formData.get("type") as string
@@ -341,12 +381,19 @@ export async function updateProject(id: number, formData: FormData) {
         return { error: "Project not found" }
     }
 
-    // Only creator or admin can update
-    const isAdmin = session.user.role === "admin"
+    // Check permission using RBAC with legacy role fallback
+    const hasPermission = await hasPermissionOrRole(
+        parseInt(session.user.id),
+        PERMISSIONS.PROJECT.UPDATE,
+        ["admin", "project_manager"],
+        id // projectId for project-scoped permissions
+    )
+
+    // Also allow creator to update their own projects
     const isCreator = existingProject.createdById === parseInt(session.user.id)
-    
-    if (!isAdmin && !isCreator) {
-        return { error: "Unauthorized: You can only edit projects you created" }
+
+    if (!hasPermission && !isCreator) {
+        return { error: "Permission denied: You don't have permission to update this project" }
     }
 
     const name = formData.get("name") as string
@@ -450,9 +497,19 @@ export async function deleteProject(id: number) {
         return { error: "Project not found" }
     }
 
-    // Only creator or admin can delete (you can add role check here)
-    if (project.createdById !== parseInt(session.user.id)) {
-        return { error: "Unauthorized: You can only delete projects you created" }
+    // Check permission using RBAC with legacy role fallback
+    const hasPermission = await hasPermissionOrRole(
+        parseInt(session.user.id),
+        PERMISSIONS.PROJECT.DELETE,
+        ["admin", "project_manager"],
+        id // projectId for project-scoped permissions
+    )
+
+    // Also allow creator to delete their own projects
+    const isCreator = project.createdById === parseInt(session.user.id)
+
+    if (!hasPermission && !isCreator) {
+        return { error: "Permission denied: You don't have permission to delete this project" }
     }
 
     // Get task count for logging/notification purposes
@@ -465,7 +522,7 @@ export async function deleteProject(id: number) {
         await prisma.project.delete({
             where: { id }
         })
-        
+
         console.log(`Project ${id} deleted successfully${taskCount > 0 ? ` along with ${taskCount} task(s)` : ""}`)
         revalidatePath("/dashboard/projects")
         revalidatePath("/dashboard")

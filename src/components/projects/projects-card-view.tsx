@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format, formatDistanceToNow } from "date-fns"
-import { Folder, Calendar, Users, MoreVertical, Edit, Trash2, AlertTriangle } from "lucide-react"
+import { Folder, Calendar, Users, MoreVertical, Edit, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -31,6 +31,8 @@ import { useSession } from "next-auth/react"
 import { deleteProject } from "@/app/actions/projects"
 import { useRouter } from "next/navigation"
 import { ProjectEditDialog } from "./project-edit-dialog"
+import { MarkUrgentDialog } from "./mark-urgent-dialog"
+import { RemoveUrgentDialog } from "./remove-urgent-dialog"
 import {
     Pagination,
     PaginationContent,
@@ -99,8 +101,11 @@ export function ProjectsCardView({
                     const userRole = session?.user?.role || "developer"
                     const isAdmin = userRole === "admin"
                     const isCreator = project.createdById === userId
+                    const isPM = userRole === "project_manager" || isAdmin
                     const canEdit = isAdmin || isCreator
                     const canDelete = isAdmin || isCreator
+                    const canMarkUrgent = (isAdmin || isPM) && project.priority !== "urgent"
+                    const canRemoveUrgent = (isAdmin || isPM) && project.priority === "urgent"
 
                     return (
                         <ProjectCard
@@ -110,6 +115,8 @@ export function ProjectsCardView({
                             statusColors={statusColors}
                             canEdit={canEdit}
                             canDelete={canDelete}
+                            canMarkUrgent={canMarkUrgent}
+                            canRemoveUrgent={canRemoveUrgent}
                             onDeleted={onProjectDeleted}
                         />
                     )
@@ -160,10 +167,12 @@ interface ProjectCardProps {
     statusColors: Record<string, string>
     canEdit: boolean
     canDelete: boolean
+    canMarkUrgent?: boolean
+    canRemoveUrgent?: boolean
     onDeleted?: () => void
 }
 
-function ProjectCard({ project, progress, statusColors, canEdit, canDelete, onDeleted }: ProjectCardProps) {
+function ProjectCard({ project, progress, statusColors, canEdit, canDelete, canMarkUrgent = false, canRemoveUrgent = false, onDeleted }: ProjectCardProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
@@ -253,9 +262,41 @@ function ProjectCard({ project, progress, statusColors, canEdit, canDelete, onDe
                                             Edit Project
                                         </DropdownMenuItem>
                                     )}
+                                    {canMarkUrgent && (
+                                        <>
+                                            {(canEdit || canDelete) && <DropdownMenuSeparator />}
+                                            <MarkUrgentDialog projectId={project.id} projectName={project.name}>
+                                                <DropdownMenuItem
+                                                    onSelect={(e) => {
+                                                        e.preventDefault()
+                                                        e.stopPropagation()
+                                                    }}
+                                                >
+                                                    <AlertTriangle className="h-4 w-4 mr-2" />
+                                                    Make Urgent
+                                                </DropdownMenuItem>
+                                            </MarkUrgentDialog>
+                                        </>
+                                    )}
+                                    {canRemoveUrgent && (
+                                        <>
+                                            {(canEdit || canDelete || canMarkUrgent) && <DropdownMenuSeparator />}
+                                            <RemoveUrgentDialog projectId={project.id} projectName={project.name}>
+                                                <DropdownMenuItem
+                                                    onSelect={(e) => {
+                                                        e.preventDefault()
+                                                        e.stopPropagation()
+                                                    }}
+                                                >
+                                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                                    Remove Urgent
+                                                </DropdownMenuItem>
+                                            </RemoveUrgentDialog>
+                                        </>
+                                    )}
                                     {canDelete && (
                                         <>
-                                            {canEdit && <DropdownMenuSeparator />}
+                                            {(canEdit || canMarkUrgent) && <DropdownMenuSeparator />}
                                             <DropdownMenuItem
                                                 onClick={(e) => {
                                                     e.preventDefault()

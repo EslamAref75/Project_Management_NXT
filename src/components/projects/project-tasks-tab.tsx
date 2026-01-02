@@ -88,7 +88,7 @@ export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
             <CardContent className="space-y-4">
                 {/* Filters */}
                 <div className="flex flex-wrap gap-4">
-                    <div key="search-filter" className="flex-1 min-w-[200px]">
+                    <div className="flex-1 min-w-[200px]">
                         <div className="relative">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -99,7 +99,7 @@ export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
                             />
                         </div>
                     </div>
-                    <div key="status-filter">
+                    <div>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="w-[150px]">
                                 <SelectValue placeholder="Status" />
@@ -114,7 +114,7 @@ export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div key="priority-filter">
+                    <div>
                         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                             <SelectTrigger className="w-[150px]">
                                 <SelectValue placeholder="Priority" />
@@ -128,7 +128,7 @@ export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div key="user-filter">
+                    <div>
                         <Select value={userFilter} onValueChange={setUserFilter}>
                             <SelectTrigger className="w-[150px]">
                                 <SelectValue placeholder="Assignee" />
@@ -184,8 +184,8 @@ export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex -space-x-2">
-                                                    {task.assignees && Array.isArray(task.assignees) && task.assignees.slice(0, 3).map((assignee: any) => (
-                                                        <Avatar key={assignee.id} className="h-6 w-6 border-2 border-background">
+                                                    {task.assignees && Array.isArray(task.assignees) && task.assignees.slice(0, 3).map((assignee: any, assigneeIndex: number) => (
+                                                        <Avatar key={`assignee-${task.id}-${assignee.id}-${assigneeIndex}`} className="h-6 w-6 border-2 border-background">
                                                             <AvatarImage src={assignee.avatarUrl || undefined} />
                                                             <AvatarFallback className="text-xs">
                                                                 {assignee.username?.substring(0, 2).toUpperCase() || "??"}
@@ -193,7 +193,7 @@ export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
                                                         </Avatar>
                                                     ))}
                                                     {task.assignees && Array.isArray(task.assignees) && task.assignees.length > 3 && (
-                                                        <div key="more-assignees" className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
+                                                        <div key={`more-assignees-${task.id}`} className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
                                                             +{task.assignees.length - 3}
                                                         </div>
                                                     )}

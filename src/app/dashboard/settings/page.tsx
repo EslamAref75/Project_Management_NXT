@@ -4,12 +4,14 @@ import { prisma } from "@/lib/prisma"
 import { ProfileForm } from "@/components/settings/profile-form"
 import { PasswordForm } from "@/components/settings/password-form"
 import { RBACPermissionsViewServer } from "@/components/settings/rbac-permissions-view-server"
+import { RBACInitializeButton } from "@/components/settings/rbac-initialize-button"
 import { UserSettingsPanel } from "@/components/settings/user-settings-panel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getUserSettings, getResolvedUserSettings } from "@/app/actions/user-settings"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Shield, FolderKanban } from "lucide-react"
+import { getRoles } from "@/app/actions/rbac"
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions)
@@ -31,6 +33,10 @@ export default async function SettingsPage() {
     const resolvedSettings = resolvedResult.success ? resolvedResult.settings : {}
 
     const isAdmin = session.user.role === "admin"
+    
+    // Check if RBAC is initialized
+    const roles = await getRoles().catch(() => [])
+    const isRBACInitialized = Array.isArray(roles) && roles.length > 0
 
     return (
         <div className="space-y-6">
@@ -88,7 +94,31 @@ export default async function SettingsPage() {
                 </TabsContent>
                 {isAdmin && (
                     <TabsContent value="roles" className="space-y-4">
-                        <RBACPermissionsViewServer userId={parseInt(session.user.id)} />
+                        <div className="p-4 border rounded-lg bg-card space-y-4">
+                            {!isRBACInitialized && (
+                                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                    <h3 className="text-lg font-medium mb-2 text-yellow-800 dark:text-yellow-200">
+                                        RBAC System Not Initialized
+                                    </h3>
+                                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
+                                        The Role-Based Access Control system needs to be initialized. 
+                                        This will create default roles and permissions in the database.
+                                    </p>
+                                    <RBACInitializeButton />
+                                </div>
+                            )}
+                            {isRBACInitialized && (
+                                <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-4">
+                                    <p className="text-sm text-green-700 dark:text-green-300">
+                                        ✓ RBAC system is initialized. {roles.length} role(s) available.
+                                    </p>
+                                </div>
+                            )}
+                            <div>
+                                <h3 className="text-lg font-medium mb-4">Your Roles & Permissions</h3>
+                                <RBACPermissionsViewServer userId={parseInt(session.user.id)} />
+                            </div>
+                        </div>
                     </TabsContent>
                 )}
                 {isAdmin && (

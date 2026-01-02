@@ -6,6 +6,17 @@ import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logActivity } from "@/lib/activity-logger"
+import { hasPermissionOrRole } from "@/lib/rbac"
+import { PERMISSIONS } from "@/lib/permissions"
+
+// Helper function to check project metadata management permission
+async function checkProjectMetadataPermission(userId: number): Promise<boolean> {
+    return hasPermissionOrRole(
+        userId,
+        PERMISSIONS.SETTINGS.PROJECT_TYPE_MANAGE,
+        ["admin", "project_manager"]
+    )
+}
 
 const projectTypeSchema = z.object({
     name: z.string().min(1, "Name is required").max(100),
@@ -55,8 +66,9 @@ export async function createProjectType(formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    if (session.user.role !== "admin") {
-        return { error: "Only admins can create project types" }
+    const hasPermission = await checkProjectMetadataPermission(parseInt(session.user.id))
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to manage project types" }
     }
 
     const name = formData.get("name")
@@ -128,8 +140,9 @@ export async function updateProjectType(id: number, formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    if (session.user.role !== "admin") {
-        return { error: "Only admins can update project types" }
+    const hasPermission = await checkProjectMetadataPermission(parseInt(session.user.id))
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to manage project types" }
     }
 
     const name = formData.get("name")
@@ -203,8 +216,9 @@ export async function deleteProjectType(id: number) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    if (session.user.role !== "admin") {
-        return { error: "Only admins can delete project types" }
+    const hasPermission = await checkProjectMetadataPermission(parseInt(session.user.id))
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to manage project types" }
     }
 
     try {
@@ -259,8 +273,9 @@ export async function toggleProjectTypeStatus(id: number) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    if (session.user.role !== "admin") {
-        return { error: "Only admins can toggle project type status" }
+    const hasPermission = await checkProjectMetadataPermission(parseInt(session.user.id))
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to manage project types" }
     }
 
     try {
@@ -307,8 +322,9 @@ export async function reorderProjectTypes(ids: number[]) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    if (session.user.role !== "admin") {
-        return { error: "Only admins can reorder project types" }
+    const hasPermission = await checkProjectMetadataPermission(parseInt(session.user.id))
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to manage project types" }
     }
 
     try {

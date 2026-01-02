@@ -16,7 +16,19 @@ import { Label } from "@/components/ui/label"
 import { createUser } from "@/app/actions/users"
 import { Loader2, Plus, UserPlus } from "lucide-react"
 
-export function UserDialog({ teams }: { teams: { id: number, name: string }[] }) {
+interface Role {
+    id: number
+    name: string
+    description?: string | null
+}
+
+export function UserDialog({ 
+    teams, 
+    roles = [] 
+}: { 
+    teams: { id: number, name: string }[]
+    roles?: Role[]
+}) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
 
@@ -70,12 +82,30 @@ export function UserDialog({ teams }: { teams: { id: number, name: string }[] })
                                 id="role"
                                 name="role"
                                 className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                required
                             >
-                                <option value="developer">Developer</option>
-                                <option value="team_lead">Team Lead</option>
-                                <option value="admin">Admin</option>
-                                <option value="viewer">Viewer</option>
+                                {roles.length > 0 ? (
+                                    roles.map((role) => (
+                                        <option key={role.id} value={role.name}>
+                                            {role.name}
+                                            {role.description ? ` - ${role.description}` : ''}
+                                        </option>
+                                    ))
+                                ) : (
+                                    // Fallback to legacy roles if no RBAC roles are available
+                                    <>
+                                        <option value="developer">Developer</option>
+                                        <option value="team_lead">Team Lead</option>
+                                        <option value="project_manager">Project Manager</option>
+                                        <option value="admin">Admin</option>
+                                    </>
+                                )}
                             </select>
+                            {roles.length === 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                    No roles found. Using default roles. Please initialize RBAC system in settings.
+                                </p>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="teamId">Assign Team (Optional)</Label>

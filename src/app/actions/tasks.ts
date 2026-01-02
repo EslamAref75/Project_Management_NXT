@@ -7,6 +7,8 @@ import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { createProjectNotification } from "./project-notifications"
 import { logActivity } from "@/lib/activity-logger"
+import { hasPermissionOrRole } from "@/lib/rbac"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const createTaskSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -59,13 +61,14 @@ export async function getTasksWithFilters(params: {
         const where: any = {}
 
         // Search filter
+        const searchConditions: any[] = []
         if (search) {
             // SQLite doesn't support mode: "insensitive", but LIKE is case-insensitive by default
-            where.OR = [
+            searchConditions.push(
                 { title: { contains: search } },
                 { project: { name: { contains: search } } },
-                { assignees: { some: { username: { contains: search } } } },
-            ]
+                { assignees: { some: { username: { contains: search } } } }
+            )
         }
 
         // Project filter
@@ -73,9 +76,42 @@ export async function getTasksWithFilters(params: {
             where.projectId = { in: projectId.map((id) => parseInt(id)) }
         }
 
-        // Status filter
+        // Status filter - support both status IDs (for dynamic statuses) and legacy status names
+        const statusConditions: any[] = []
         if (status.length > 0) {
-            where.status = { in: status }
+            const statusIds: number[] = []
+            const statusNames: string[] = []
+            
+            status.forEach(s => {
+                const id = parseInt(s)
+                if (!isNaN(id)) {
+                    statusIds.push(id)
+                } else {
+                    statusNames.push(s)
+                }
+            })
+            
+            if (statusIds.length > 0) {
+                statusConditions.push({ taskStatusId: { in: statusIds } })
+            }
+            if (statusNames.length > 0) {
+                statusConditions.push({ status: { in: statusNames }, taskStatusId: null })
+            }
+        }
+
+        // Combine search and status filters properly
+        if (searchConditions.length > 0 && statusConditions.length > 0) {
+            // Both search and status: AND them together
+            where.AND = [
+                { OR: searchConditions },
+                { OR: statusConditions }
+            ]
+        } else if (searchConditions.length > 0) {
+            // Only search
+            where.OR = searchConditions
+        } else if (statusConditions.length > 0) {
+            // Only status
+            where.OR = statusConditions
         }
 
         // Priority filter
@@ -216,10 +252,24 @@ export async function createTask(formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
+    const projectId = formData.get("projectId")
+    const projectIdNum = projectId ? parseInt(projectId as string) : undefined
+
+    // Check permission using RBAC with legacy role fallback
+    const hasPermission = await hasPermissionOrRole(
+        parseInt(session.user.id),
+        PERMISSIONS.TASK.CREATE,
+        ["admin", "project_manager", "team_lead"],
+        projectIdNum // projectId for project-scoped permissions
+    )
+
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to create tasks" }
+    }
+
     const title = formData.get("title")
     const description = formData.get("description")
     const priority = formData.get("priority")
-    const projectId = formData.get("projectId")
     const assigneeIds = formData.get("assigneeIds")
     const dueDate = formData.get("dueDate")
 
@@ -479,19 +529,61 @@ export async function updateTask(taskId: number, formData: FormData) {
 
     const existingTask = await prisma.task.findUnique({
         where: { id: taskId },
-        select: { id: true, createdById: true, projectId: true }
+        select: { id: true, createdById: true, projectId: true, assignees: { select: { id: true } } }
     })
 
     if (!existingTask) {
         return { error: "Task not found" }
     }
 
+    // Check permission using RBAC with legacy role fallback
+    const hasPermission = await hasPermissionOrRole(
+        parseInt(session.user.id),
+        PERMISSIONS.TASK.UPDATE,
+        ["admin", "project_manager", "team_lead"],
+        existingTask.projectId // projectId for project-scoped permissions
+    )
+
+    // Also allow creator or assignee to update
+    const isCreator = existingTask.createdById === parseInt(session.user.id)
+    const isAssignee = existingTask.assignees.some(a => a.id === parseInt(session.user.id))
+
+    if (!hasPermission && !isCreator && !isAssignee) {
+        return { error: "Permission denied: You don't have permission to update this task" }
+    }
+
+    // Extract form data
     const title = formData.get("title") as string | null
     const description = formData.get("description") as string | null
     const priority = formData.get("priority") as string | null
     const status = formData.get("status") as string | null
     const dueDate = formData.get("dueDate") as string | null
     const assigneeIds = formData.get("assigneeIds") as string | null
+
+    // Check specific permissions for priority and status changes
+    if (priority) {
+        const hasPriorityPermission = await hasPermissionOrRole(
+            parseInt(session.user.id),
+            PERMISSIONS.TASK.CHANGE_PRIORITY,
+            ["admin", "project_manager", "team_lead"],
+            existingTask.projectId
+        )
+        if (!hasPriorityPermission && !isCreator) {
+            return { error: "Permission denied: You don't have permission to change task priority" }
+        }
+    }
+
+    if (status) {
+        const hasStatusPermission = await hasPermissionOrRole(
+            parseInt(session.user.id),
+            PERMISSIONS.TASK.CHANGE_STATUS,
+            ["admin", "project_manager", "team_lead"],
+            existingTask.projectId
+        )
+        if (!hasStatusPermission && !isCreator && !isAssignee) {
+            return { error: "Permission denied: You don't have permission to change task status" }
+        }
+    }
 
     const validated = updateTaskSchema.safeParse({
         title: title || undefined,
@@ -549,6 +641,18 @@ export async function updateTask(taskId: number, formData: FormData) {
         }
 
         if (validated.data.assigneeIds !== undefined) {
+            // Check permission for task assignment
+            const hasAssignPermission = await hasPermissionOrRole(
+                parseInt(session.user.id),
+                PERMISSIONS.TASK.ASSIGN,
+                ["admin", "project_manager", "team_lead"],
+                existingTask.projectId
+            )
+            
+            if (!hasAssignPermission && !isCreator) {
+                return { error: "Permission denied: You don't have permission to assign tasks" }
+            }
+
             const newAssigneeIds = validated.data.assigneeIds
             const currentAssigneeIds = currentTask.assignees.map(a => a.id)
             
@@ -642,11 +746,31 @@ export async function updateTaskStatus(taskId: number, status: string | number, 
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
+    // Check permission using RBAC with legacy role fallback
+    const hasPermission = await hasPermissionOrRole(
+        parseInt(session.user.id),
+        PERMISSIONS.TASK.CHANGE_STATUS,
+        ["admin", "project_manager", "team_lead"],
+        projectId // projectId for project-scoped permissions
+    )
+
     try {
         const task = await prisma.task.findUnique({
             where: { id: taskId },
             include: { assignees: true, taskStatus: true }
         })
+
+        if (!task) {
+            return { error: "Task not found" }
+        }
+
+        // Also allow creator or assignee to change status
+        const isCreator = task.createdById === parseInt(session.user.id)
+        const isAssignee = task.assignees.some(a => a.id === parseInt(session.user.id))
+
+        if (!hasPermission && !isCreator && !isAssignee) {
+            return { error: "Permission denied: You don't have permission to change task status" }
+        }
 
         if (!task) {
             return { error: "Task not found" }
@@ -740,6 +864,21 @@ export async function deleteTask(taskId: number) {
 
     if (!task) {
         return { error: "Task not found" }
+    }
+
+    // Check permission using RBAC with legacy role fallback
+    const hasPermission = await hasPermissionOrRole(
+        parseInt(session.user.id),
+        PERMISSIONS.TASK.DELETE,
+        ["admin", "project_manager", "team_lead"],
+        task.projectId // projectId for project-scoped permissions
+    )
+
+    // Also allow creator to delete their own tasks
+    const isCreator = task.createdById === parseInt(session.user.id)
+
+    if (!hasPermission && !isCreator) {
+        return { error: "Permission denied: You don't have permission to delete this task" }
     }
 
     try {

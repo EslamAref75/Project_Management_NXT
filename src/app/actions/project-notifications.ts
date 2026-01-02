@@ -323,6 +323,15 @@ export async function markProjectNotificationAsRead(
       return { success: false, error: "Notification not found" }
     }
 
+    // Prevent marking urgent notifications that require acknowledgment as read
+    // They can only be marked as read after acknowledgment
+    if (notification.isUrgent && notification.requiresAcknowledgment && !notification.acknowledgedAt) {
+      return { 
+        success: false, 
+        error: "Urgent notifications cannot be marked as read until acknowledged. Please acknowledge the urgent project first." 
+      }
+    }
+
     await prisma.projectNotification.update({
       where: { id: notificationId },
       data: { isRead: true },
@@ -361,11 +370,17 @@ export async function markAllProjectNotificationsAsRead(projectId: number) {
       return { success: false, error: "Access denied to this project" }
     }
 
+    // Don't mark urgent notifications that require acknowledgment as read
     await prisma.projectNotification.updateMany({
       where: {
         projectId,
         userId,
         isRead: false,
+        OR: [
+          { isUrgent: false },
+          { requiresAcknowledgment: false },
+          { acknowledgedAt: { not: null } }
+        ]
       },
       data: {
         isRead: true,

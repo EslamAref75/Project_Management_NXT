@@ -6,6 +6,17 @@ import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logActivity } from "@/lib/activity-logger"
+import { hasPermissionOrRole } from "@/lib/rbac"
+import { PERMISSIONS } from "@/lib/permissions"
+
+// Helper function to check project status management permission
+async function checkProjectStatusPermission(userId: number): Promise<boolean> {
+    return hasPermissionOrRole(
+        userId,
+        PERMISSIONS.SETTINGS.PROJECT_STATUS_MANAGE,
+        ["admin", "project_manager"]
+    )
+}
 
 const projectStatusSchema = z.object({
     name: z.string().min(1, "Name is required").max(100),
@@ -60,8 +71,9 @@ export async function createProjectStatus(formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    if (session.user.role !== "admin") {
-        return { error: "Only admins can create project statuses" }
+    const hasPermission = await checkProjectStatusPermission(parseInt(session.user.id))
+    if (!hasPermission) {
+        return { error: "Permission denied: You don't have permission to manage project statuses" }
     }
 
     // Check if ProjectStatus model exists in Prisma client

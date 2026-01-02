@@ -32,19 +32,21 @@ export async function getUsers() {
 
 export async function createUser(formData: FormData) {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+    // Check for admin permissions (using legacy check for now, ideally should use RBAC)
+    // TODO: Update this to check for correct permissions
+    if (!session || (session.user.role !== "admin" && session.user.role !== "System Admin")) return { error: "Unauthorized" }
 
     const username = formData.get("username")
     const email = formData.get("email")
     const password = formData.get("password")
-    const role = formData.get("role")
+    const roleName = formData.get("role")
     const teamId = formData.get("teamId")
 
     const validated = createUserSchema.safeParse({
         username,
         email,
         password,
-        role,
+        role: roleName,
         teamId: teamId ? parseInt(teamId as string) : undefined
     })
 
@@ -55,19 +57,39 @@ export async function createUser(formData: FormData) {
     try {
         const hashedPassword = await bcrypt.hash(validated.data.password, 10)
 
-        await prisma.user.create({
+        // 1. Check if the role exists in the roles table
+        const rbacRole = await prisma.role.findUnique({
+            where: { name: validated.data.role }
+        })
+
+        // 2. Create the user
+        const newUser = await prisma.user.create({
             data: {
                 username: validated.data.username,
                 email: validated.data.email,
-                role: validated.data.role,
+                role: validated.data.role, // Keep legacy field in sync for now
                 passwordHash: hashedPassword,
                 teamId: validated.data.teamId
             }
         })
+
+        // 3. If RBAC role exists, assign it to the user
+        if (rbacRole) {
+            await prisma.userRole.create({
+                data: {
+                    userId: newUser.id,
+                    roleId: rbacRole.id,
+                    scopeType: "global", // Defaulting to global scope for dashboard creation
+                    scopeId: 0
+                }
+            })
+        }
+
         revalidatePath("/dashboard/users")
         revalidatePath("/dashboard/teams")
         return { success: true }
     } catch (e) {
+        console.error("Create User Error:", e)
         return { error: "Failed to create user (Email/Username might be taken)" }
     }
 }

@@ -186,8 +186,8 @@ export async function updateRole(id: number, formData: FormData) {
     select: { isSystemRole: true, name: true },
   })
 
-  if (existingRole?.isSystemRole && existingRole.name === "Super Admin") {
-    return { error: "Cannot modify Super Admin role" }
+  if (existingRole?.isSystemRole && existingRole.name === "System Admin") {
+    return { error: "Cannot modify System Admin role" }
   }
 
   const name = formData.get("name") as string
@@ -520,19 +520,83 @@ export async function initializeRBAC() {
 
     console.log(`✅ Created/updated ${permissionMap.size} permissions`)
 
-    // Create default roles
-    for (const [roleKey, roleData] of Object.entries(DEFAULT_ROLES)) {
-      const role = await prisma.role.upsert({
-        where: { name: roleData.name },
-        update: {
-          description: roleData.description,
-        },
-        create: {
-          name: roleData.name,
-          description: roleData.description,
-          isSystemRole: roleData.isSystemRole,
-        },
+    // STEP 1: Delete ALL user role assignments first
+    const userRoleCount = await prisma.userRole.count()
+    if (userRoleCount > 0) {
+      console.log(`🗑️  Removing ${userRoleCount} user role assignment(s)`)
+      await prisma.userRole.deleteMany({})
+      console.log(`✅ Deleted all user role assignments`)
+    }
+
+    // STEP 2: Delete ALL role permissions
+    const rolePermissionCount = await prisma.rolePermission.count()
+    if (rolePermissionCount > 0) {
+      console.log(`🗑️  Removing ${rolePermissionCount} role permission(s)`)
+      await prisma.rolePermission.deleteMany({})
+      console.log(`✅ Deleted all role permissions`)
+    }
+
+    // STEP 3: Delete ALL existing roles (including system roles)
+    // First, explicitly delete old role names that shouldn't exist
+    const oldRoleNames = ["Super Admin", "Project Admin", "Audit Admin"]
+    for (const oldRoleName of oldRoleNames) {
+      const deleted = await prisma.role.deleteMany({
+        where: { name: oldRoleName },
       })
+      if (deleted.count > 0) {
+        console.log(`🗑️  Deleted old role: ${oldRoleName}`)
+      }
+    }
+
+    // Now delete ALL remaining roles
+    const existingRoleCount = await prisma.role.count()
+    if (existingRoleCount > 0) {
+      console.log(`🗑️  Deleting ${existingRoleCount} remaining role(s)...`)
+      const deletedRoles = await prisma.role.deleteMany({})
+      console.log(`✅ Deleted ${deletedRoles.count} role(s)`)
+      
+      // Verify deletion
+      const remainingRoles = await prisma.role.count()
+      if (remainingRoles > 0) {
+        console.log(`⚠️  Warning: ${remainingRoles} role(s) still exist after deletion`)
+        const remaining = await prisma.role.findMany({ select: { id: true, name: true } })
+        console.log(`   Remaining roles: ${remaining.map(r => r.name).join(", ")}`)
+      }
+    } else {
+      console.log(`ℹ️  No existing roles to delete`)
+    }
+
+    // Create new default roles (all old roles have been deleted, so we use create)
+    for (const [roleKey, roleData] of Object.entries(DEFAULT_ROLES)) {
+      // Check if role already exists (shouldn't happen after delete, but just in case)
+      const existingRole = await prisma.role.findUnique({
+        where: { name: roleData.name },
+      })
+
+      let role
+      if (existingRole) {
+        // Update existing role if it somehow still exists
+        role = await prisma.role.update({
+          where: { id: existingRole.id },
+          data: {
+            description: roleData.description,
+            isSystemRole: roleData.isSystemRole,
+          },
+        })
+        // Clear existing permissions
+        await prisma.rolePermission.deleteMany({
+          where: { roleId: role.id },
+        })
+      } else {
+        // Create new role
+        role = await prisma.role.create({
+          data: {
+            name: roleData.name,
+            description: roleData.description,
+            isSystemRole: roleData.isSystemRole,
+          },
+        })
+      }
 
       // Assign permissions to role
       const permissionIds = roleData.permissions
