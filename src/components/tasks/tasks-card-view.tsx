@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from "date-fns"
 import { Calendar, Lock, Target, AlertCircle } from "lucide-react"
+import { ForecastBadge, ForecastData } from "@/components/productivity/forecast-badge"
 import {
     Pagination,
     PaginationContent,
@@ -23,6 +24,7 @@ interface TasksCardViewProps {
     page: number
     limit: number
     onPageChange: (page: number) => void
+    forecasts?: Record<number, ForecastData>
 }
 
 export function TasksCardView({
@@ -31,6 +33,7 @@ export function TasksCardView({
     page,
     limit,
     onPageChange,
+    forecasts,
 }: TasksCardViewProps) {
     const totalPages = Math.ceil(total / limit)
 
@@ -136,7 +139,7 @@ export function TasksCardView({
                                             className={cn(
                                                 "text-xs",
                                                 statusColors[task.status] ||
-                                                    "bg-gray-500/10 text-gray-500 border-gray-500/20"
+                                                "bg-gray-500/10 text-gray-500 border-gray-500/20"
                                             )}
                                         >
                                             {task.status.replace("_", " ")}
@@ -147,6 +150,15 @@ export function TasksCardView({
                                                 Today
                                             </Badge>
                                         )}
+                                        {forecasts && forecasts[task.id] && (
+                                            <div className="mt-1">
+                                                <ForecastBadge
+                                                    forecast={forecasts[task.id]}
+                                                    dueDate={task.dueDate}
+                                                    compact
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
@@ -156,7 +168,7 @@ export function TasksCardView({
                                             className={cn(
                                                 "text-xs",
                                                 priorityColors[task.priority] ||
-                                                    "bg-gray-500/10 text-gray-500 border-gray-500/20"
+                                                "bg-gray-500/10 text-gray-500 border-gray-500/20"
                                             )}
                                         >
                                             {task.priority}

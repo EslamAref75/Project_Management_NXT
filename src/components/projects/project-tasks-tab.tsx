@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,10 +33,22 @@ interface ProjectTasksTabProps {
 }
 
 export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
-    const [searchQuery, setSearchQuery] = useState("")
-    const [statusFilter, setStatusFilter] = useState<string>("all")
-    const [priorityFilter, setPriorityFilter] = useState<string>("all")
-    const [userFilter, setUserFilter] = useState<string>("all")
+    const searchParams = useSearchParams()
+    const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "")
+    const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all")
+    const [priorityFilter, setPriorityFilter] = useState<string>(searchParams.get("priority") || "all")
+    const [userFilter, setUserFilter] = useState<string>(searchParams.get("assignee") || searchParams.get("user") || "all")
+
+    // Update state when search params change (e.g. from tab navigation)
+    useEffect(() => {
+        const status = searchParams.get("status")
+        const priority = searchParams.get("priority")
+        const assignee = searchParams.get("assignee") || searchParams.get("user")
+
+        if (status) setStatusFilter(status)
+        if (priority) setPriorityFilter(priority)
+        if (assignee) setUserFilter(assignee)
+    }, [searchParams])
 
     const tasks = project.tasks || []
 
@@ -167,7 +180,7 @@ export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
                                 </TableRow>
                             ) : (
                                 filteredTasks.map((task: any) => {
-                                    const isBlocked = task.status === "waiting" || 
+                                    const isBlocked = task.status === "waiting" ||
                                         (task.dependencies && task.dependencies.some(
                                             (dep: any) => dep.dependsOnTask.status !== "completed"
                                         ))

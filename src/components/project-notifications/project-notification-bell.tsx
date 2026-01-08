@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,8 +20,12 @@ interface ProjectNotificationBellProps {
 }
 
 export function ProjectNotificationBell({ projectId }: ProjectNotificationBellProps) {
+  // Simple notification sound (short beep/bell)
+  const NOTIFICATION_SOUND = "data:audio/mp3;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAG84AAAAAABwAAAAAAAAAAAA6gAAAAADgAAAAAAAAAApGOD6f////////7zmO9HOsp8///6zynv//////4z0f/////7z8/////4z///4z////95/wAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABvOAA="
+
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  const prevCountRef = useRef(0)
   const router = useRouter()
 
   useEffect(() => {
@@ -29,14 +33,26 @@ export function ProjectNotificationBell({ projectId }: ProjectNotificationBellPr
     const fetchUnreadCount = async () => {
       const result = await getProjectUnreadNotificationCount(projectId)
       if (result.success && result.count !== undefined) {
+        // Play sound if count increased and it's not the initial load (prevCount > 0 or handled differently)
+        // logic: if new count > old count, and old count was tracked (or just simple increase)
+        if (result.count > prevCountRef.current) {
+          try {
+            const audio = new Audio(NOTIFICATION_SOUND)
+            audio.play().catch(e => console.error("Error playing notification sound:", e))
+          } catch (e) {
+            console.error("Audio error:", e)
+          }
+        }
+
         setUnreadCount(result.count)
+        prevCountRef.current = result.count
       }
     }
 
     fetchUnreadCount()
 
-    // Poll for new notifications every 10 seconds
-    const interval = setInterval(fetchUnreadCount, 10000)
+    // Poll for new notifications every 5 seconds
+    const interval = setInterval(fetchUnreadCount, 5000)
 
     return () => clearInterval(interval)
   }, [projectId])

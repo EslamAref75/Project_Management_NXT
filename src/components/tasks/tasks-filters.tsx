@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { X, Calendar, Filter } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { format } from "date-fns"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
+import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -102,31 +102,11 @@ export function TasksFilters({
         }
     }
 
-    const applyDatePreset = (preset: "today" | "week" | "month" | "overdue") => {
-        const now = new Date()
-        let start: Date
-        let end: Date | undefined
-
-        switch (preset) {
-            case "today":
-                start = new Date(now.setHours(0, 0, 0, 0))
-                end = new Date(now.setHours(23, 59, 59, 999))
-                break
-            case "week":
-                start = new Date(now.setDate(now.getDate() - 7))
-                end = new Date()
-                break
-            case "month":
-                start = new Date(now.setMonth(now.getMonth() - 1))
-                end = new Date()
-                break
-            case "overdue":
-                start = new Date(0) // Beginning of time
-                end = new Date(now.setHours(0, 0, 0, 0))
-                break
-        }
-
-        onDateRangeChange({ start, end })
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        onDateRangeChange({
+            start: range?.from,
+            end: range?.to
+        })
     }
 
     return (
@@ -284,98 +264,14 @@ export function TasksFilters({
                     <div className="space-y-2">
                         <Label className="text-xs">Date</Label>
                         <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className={cn(
-                                        "h-9 justify-start text-left font-normal",
-                                        !dateRange.start && !dateRange.end && "text-muted-foreground"
-                                    )}
-                                >
-                                    <Calendar className="mr-2 h-4 w-4" />
-                                    {dateRange.start && dateRange.end ? (
-                                        <>
-                                            {format(dateRange.start, "MMM d")} -{" "}
-                                            {format(dateRange.end, "MMM d")}
-                                        </>
-                                    ) : dateRange.start ? (
-                                        format(dateRange.start, "MMM d")
-                                    ) : (
-                                        <span>Pick a date range</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <div className="p-3 space-y-3 border-b">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs">Filter by</Label>
-                                        <RadioGroup
-                                            value={dateFilterType}
-                                            onValueChange={(value) =>
-                                                onDateFilterTypeChange(value as "dueDate" | "createdDate")
-                                            }
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <RadioGroupItem value="dueDate" id="dueDate" />
-                                                <label htmlFor="dueDate" className="text-sm cursor-pointer">
-                                                    Due Date
-                                                </label>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                <RadioGroupItem value="createdDate" id="createdDate" />
-                                                <label htmlFor="createdDate" className="text-sm cursor-pointer">
-                                                    Created Date
-                                                </label>
-                                            </div>
-                                        </RadioGroup>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyDatePreset("today")}
-                                        >
-                                            Today
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyDatePreset("week")}
-                                        >
-                                            This Week
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyDatePreset("month")}
-                                        >
-                                            This Month
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyDatePreset("overdue")}
-                                        >
-                                            Overdue
-                                        </Button>
-                                    </div>
-                                </div>
-                                <CalendarComponent
-                                    mode="range"
-                                    selected={{
-                                        from: dateRange.start,
-                                        to: dateRange.end,
-                                    }}
-                                    onSelect={(range) =>
-                                        onDateRangeChange({
-                                            start: range?.from,
-                                            end: range?.to,
-                                        })
-                                    }
-                                    numberOfMonths={2}
-                                />
-                            </PopoverContent>
+                            <DatePickerWithRange
+                                date={{
+                                    from: dateRange.start,
+                                    to: dateRange.end
+                                }}
+                                setDate={handleDateRangeChange}
+                                className="w-[240px]"
+                            />
                         </Popover>
                     </div>
 

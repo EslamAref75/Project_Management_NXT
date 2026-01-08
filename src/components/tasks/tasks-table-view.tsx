@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from "date-fns"
 import { ArrowUpDown, ArrowUp, ArrowDown, Lock, Target, AlertCircle } from "lucide-react"
+import { ForecastBadge, ForecastData } from "@/components/productivity/forecast-badge"
 import { Button } from "@/components/ui/button"
 import {
     Pagination,
@@ -35,6 +36,7 @@ interface TasksTableViewProps {
     page: number
     limit: number
     onPageChange: (page: number) => void
+    forecasts?: Record<number, ForecastData>
 }
 
 export function TasksTableView({
@@ -43,6 +45,7 @@ export function TasksTableView({
     page,
     limit,
     onPageChange,
+    forecasts,
 }: TasksTableViewProps) {
     const [sortField, setSortField] = useState<SortField | null>(null)
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
@@ -203,6 +206,7 @@ export function TasksTableView({
                                 <SortButton field="dueDate">Due Date</SortButton>
                             </TableHead>
                             <TableHead>Dependencies</TableHead>
+                            <TableHead>Forecast</TableHead>
                             <TableHead>Today Task</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -271,7 +275,7 @@ export function TasksTableView({
                                             className={cn(
                                                 "text-xs",
                                                 statusColors[task.status] ||
-                                                    "bg-gray-500/10 text-gray-500 border-gray-500/20"
+                                                "bg-gray-500/10 text-gray-500 border-gray-500/20"
                                             )}
                                         >
                                             {task.status.replace("_", " ")}
@@ -282,7 +286,7 @@ export function TasksTableView({
                                             className={cn(
                                                 "text-xs",
                                                 priorityColors[task.priority] ||
-                                                    "bg-gray-500/10 text-gray-500 border-gray-500/20"
+                                                "bg-gray-500/10 text-gray-500 border-gray-500/20"
                                             )}
                                         >
                                             {task.priority}
@@ -314,6 +318,17 @@ export function TasksTableView({
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {forecasts && forecasts[task.id] ? (
+                                            <ForecastBadge
+                                                forecast={forecasts[task.id]}
+                                                dueDate={task.dueDate}
+                                                compact
+                                            />
                                         ) : (
                                             <span className="text-muted-foreground">—</span>
                                         )}

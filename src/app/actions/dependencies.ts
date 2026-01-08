@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
+import { createProjectNotification } from "./project-notifications"
+import { logActivity } from "@/lib/activity-logger"
 
 const createDependencySchema = z.object({
     taskId: z.coerce.number(),

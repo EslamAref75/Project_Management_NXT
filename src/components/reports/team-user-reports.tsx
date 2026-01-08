@@ -123,7 +123,7 @@ export function TeamUserReports({ userId, userRole }: TeamUserReportsProps) {
         ])
 
         const csv = [headers, ...rows]
-            .map((row) => row.map((cell) => `"${cell}"`).join(","))
+            .map((row) => row.map((cell: any) => `"${cell}"`).join(","))
             .join("\n")
 
         const blob = new Blob([csv], { type: "text/csv" })
@@ -218,7 +218,7 @@ export function TeamUserReports({ userId, userRole }: TeamUserReportsProps) {
                                         !dateRange.start && !dateRange.end && "text-muted-foreground"
                                     )}
                                 >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    <CalendarIcon className={cn("mr-2 h-4 w-4", (dateRange.start || dateRange.end) && "text-primary")} />
                                     {dateRange.start && dateRange.end ? (
                                         <>
                                             {format(dateRange.start, "MMM d")} -{" "}

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { startOfDay, endOfDay } from "date-fns"
+import { getStatTrend, StatTrend } from "@/lib/stats"
 
 export async function getDashboardSummary() {
     const session = await getServerSession(authOptions)
@@ -93,7 +94,7 @@ export async function getDashboardSummary() {
                 ]
             }
         }
-        
+
         if (taskStatuses.length > 0) {
             for (const status of taskStatuses) {
                 const count = await prisma.task.count({
@@ -265,10 +266,38 @@ export async function getDashboardSummary() {
             })
         ])
 
+        // Calculate Trends
+        // Admin gets global trends, Users get their dashboard trends
+        const entityType = isAdmin ? "global" : "user_dashboard"
+        const entityId = isAdmin ? null : userId
+
+        // For negative metrics (overdue, blocked), Up is Red. This logic is handled in UI usually,
+        // but the trend calculation itself (Up/Down) is agnostic.
+        // We just return direction.
+
+        const [
+            totalProjectsTrend,
+            totalTasksTrend,
+            myTasksTrend,
+            blockedTasksTrend,
+            overdueTasksTrend,
+            todaysTasksTrend,
+            completedTodayTrend
+        ] = await Promise.all([
+            getStatTrend(entityType, entityId, "total_projects", totalProjects),
+            getStatTrend(entityType, entityId, "total_tasks", totalTasks),
+            getStatTrend("user_dashboard", userId, "my_tasks", myTasks), // My Tasks is always user scoped
+            getStatTrend(entityType, entityId, "blocked_tasks", blockedTasks),
+            getStatTrend(entityType, entityId, "overdue_tasks", overdueTasks),
+            getStatTrend("user_dashboard", userId, "todays_tasks_total", todaysTasks),
+            getStatTrend("user_dashboard", userId, "todays_tasks_completed", completedToday)
+        ])
+
         return {
             success: true,
             projects: {
                 total: totalProjects,
+                trend: totalProjectsTrend,
                 statusCounts: projectStatusCounts,
                 legacyActive: legacyActiveCount,
                 legacyOnHold: legacyOnHoldCount
@@ -280,9 +309,13 @@ export async function getDashboardSummary() {
             })),
             tasks: {
                 total: totalTasks,
+                trend: totalTasksTrend,
                 myTasks: myTasks,
+                myTasksTrend: myTasksTrend,
                 blocked: blockedTasks,
+                blockedTrend: blockedTasksTrend,
                 overdue: overdueTasks,
+                overdueTrend: overdueTasksTrend,
                 statusCounts: taskStatusCounts
             },
             taskStatuses: taskStatuses.map(ts => ({
@@ -294,7 +327,9 @@ export async function getDashboardSummary() {
             })),
             todayTasks: {
                 total: todaysTasks,
-                completed: completedToday
+                totalTrend: todaysTasksTrend,
+                completed: completedToday,
+                completedTrend: completedTodayTrend
             },
             recentActivities
         }

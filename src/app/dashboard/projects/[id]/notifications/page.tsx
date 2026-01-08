@@ -7,14 +7,15 @@ import { ProjectNotificationCenter } from "@/components/project-notifications/pr
 export default async function ProjectNotificationsPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     redirect("/login")
   }
 
-  const projectId = parseInt(params.id)
+  const { id } = await params
+  const projectId = parseInt(id)
   const userId = parseInt(session.user.id)
 
   // Verify user has access to the project
@@ -33,7 +34,7 @@ export default async function ProjectNotificationsPage({
   // Fetch project details
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { id: true, name: true, code: true },
+    select: { id: true, name: true },
   })
 
   if (!project) {

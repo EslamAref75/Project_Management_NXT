@@ -140,6 +140,8 @@ model Task {
   taskStatus     TaskStatus?      @relation(fields: [taskStatusId], references: [id])
   timeLogs       TimeLog[]
   assignees      User[]           @relation("TaskAssignees")
+  startedAt      DateTime?        @map("started_at")
+  completedAt    DateTime?        @map("completed_at")
 
   @@index([taskStatusId])
   @@map("tasks")
@@ -715,4 +717,46 @@ model TaskStatus {
   @@index([isDefault])
   @@index([isBlocking])
   @@map("task_statuses")
+}
+
+model StatSnapshot {
+  id          Int      @id @default(autoincrement())
+  entityType  String   @map("entity_type") // "project", "task", "global"
+  entityId    Int?     @map("entity_id")   // Nullable for global stats
+  metricKey   String   @map("metric_key")  // e.g., "total_tasks", "completed_tasks"
+  value       Float
+  date        DateTime // The date this snapshot represents
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, metricKey, date])
+  @@map("stats_snapshots")
+}
+
+model ProductivitySnapshot {
+  id          Int      @id @default(autoincrement())
+  entityType  String   @map("entity_type") // "user", "team", "project"
+  entityId    Int      @map("entity_id")
+  period      String   // "daily", "weekly"
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  score       Float
+  breakdown   String   @map("breakdown") // JSON
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, period])
+  @@map("productivity_snapshots")
+}
+
+model ForecastSnapshot {
+  id            Int      @id @default(autoincrement())
+  entityType    String   @map("entity_type") // "task", "project"
+  entityId      Int      @map("entity_id")
+  predictedDate DateTime @map("predicted_date")
+  riskLevel     String   @map("risk_level") // "low", "medium", "high"
+  confidence    Float
+  explanation   String   // JSON or text
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@map("forecast_snapshots")
 }

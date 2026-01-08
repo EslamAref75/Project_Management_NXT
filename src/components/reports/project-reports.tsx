@@ -17,7 +17,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
+import { DateRange } from "react-day-picker"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import {
@@ -88,6 +89,13 @@ export function ProjectReports({ userId, userRole }: ProjectReportsProps) {
             setError(result.error || "Failed to load project reports")
         }
         setLoading(false)
+    }
+
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        setDateRange({
+            start: range?.from,
+            end: range?.to
+        })
     }
 
     const exportToCSV = () => {
@@ -172,6 +180,17 @@ export function ProjectReports({ userId, userRole }: ProjectReportsProps) {
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <DatePickerWithRange
+                                date={{
+                                    from: dateRange.start,
+                                    to: dateRange.end
+                                }}
+                                setDate={handleDateRangeChange}
+                                className="w-[240px]"
+                            />
                         </div>
 
                         <Button variant="outline" onClick={exportToCSV}>

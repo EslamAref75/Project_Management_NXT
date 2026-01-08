@@ -7,6 +7,7 @@ import { ActivitySnapshot } from "@/components/dashboard/activity-snapshot"
 import { UrgentProjectsSection } from "@/components/dashboard/urgent-projects-section"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
+import { DashboardExportButton } from "@/components/dashboard/dashboard-export-button"
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions)
@@ -40,9 +41,12 @@ export default async function DashboardPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                     <p className="text-muted-foreground mt-1">{today}</p>
                 </div>
-                <Badge variant="secondary" className="text-sm">
-                    {userRole === "admin" ? "Admin" : userRole === "project_manager" ? "Project Manager" : "Developer"}
-                </Badge>
+                <div className="flex items-center space-x-2">
+                    <DashboardExportButton />
+                    <Badge variant="secondary" className="text-sm">
+                        {userRole === "admin" ? "Admin" : userRole === "project_manager" ? "Project Manager" : "Developer"}
+                    </Badge>
+                </div>
             </div>
 
             {/* Quick Statistics Cards */}
@@ -56,6 +60,11 @@ export default async function DashboardPage() {
                             icon="FolderKanban"
                             href="/dashboard/projects"
                             variant="info"
+                            trend={summary.projects?.trend ? {
+                                direction: summary.projects.trend.direction,
+                                value: `${summary.projects.trend.percentage}%`,
+                                label: "vs yesterday"
+                            } : undefined}
                         />
                         {/* Dynamic Project Status Cards */}
                         {summary.projectStatuses && summary.projectStatuses.length > 0 ? (
@@ -108,15 +117,25 @@ export default async function DashboardPage() {
                         icon="CheckSquare"
                         href="/dashboard/tasks"
                         variant="info"
+                        trend={summary.tasks?.trend ? {
+                            direction: summary.tasks.trend.direction,
+                            value: `${summary.tasks.trend.percentage}%`,
+                            label: "vs yesterday"
+                        } : undefined}
                     />
                 )}
-                
+
                 <StatCard
                     title="My Tasks"
                     value={summary.tasks?.myTasks || 0}
                     icon="UserCheck"
                     href="/dashboard/tasks?assignee=me"
                     variant="default"
+                    trend={summary.tasks?.myTasksTrend ? {
+                        direction: summary.tasks.myTasksTrend.direction,
+                        value: `${summary.tasks.myTasksTrend.percentage}%`,
+                        label: "vs yesterday"
+                    } : undefined}
                 />
 
                 <StatCard
@@ -125,6 +144,11 @@ export default async function DashboardPage() {
                     icon="AlertTriangle"
                     href="/dashboard/tasks?dependencyState=blocked"
                     variant="danger"
+                    trend={summary.tasks?.blockedTrend ? {
+                        direction: summary.tasks.blockedTrend.direction,
+                        value: `${summary.tasks.blockedTrend.percentage}%`,
+                        label: "vs yesterday"
+                    } : undefined}
                 />
 
                 <StatCard
@@ -133,6 +157,11 @@ export default async function DashboardPage() {
                     icon="Clock"
                     href="/dashboard/tasks?overdue=true"
                     variant="danger"
+                    trend={summary.tasks?.overdueTrend ? {
+                        direction: summary.tasks.overdueTrend.direction,
+                        value: `${summary.tasks.overdueTrend.percentage}%`,
+                        label: "vs yesterday"
+                    } : undefined}
                 />
             </div>
 
@@ -166,6 +195,11 @@ export default async function DashboardPage() {
                     icon="Calendar"
                     href="/dashboard/tasks?today=true"
                     variant="info"
+                    trend={summary.todayTasks?.totalTrend ? {
+                        direction: summary.todayTasks.totalTrend.direction,
+                        value: `${summary.todayTasks.totalTrend.percentage}%`,
+                        label: "vs yesterday"
+                    } : undefined}
                 />
                 <StatCard
                     title="Completed Today"
@@ -173,6 +207,11 @@ export default async function DashboardPage() {
                     icon="CheckCircle2"
                     href="/dashboard/reports?tab=today"
                     variant="success"
+                    trend={summary.todayTasks?.completedTrend ? {
+                        direction: summary.todayTasks.completedTrend.direction,
+                        value: `${summary.todayTasks.completedTrend.percentage}%`,
+                        label: "vs yesterday"
+                    } : undefined}
                 />
             </div>
 
@@ -184,8 +223,8 @@ export default async function DashboardPage() {
                 {/* Today's Focus Section */}
                 <div className={isPM ? "lg:col-span-2" : "lg:col-span-3"}>
                     {todaysFocus.success ? (
-                        <TodaysFocusSection 
-                            tasks={todaysFocus.tasks || []} 
+                        <TodaysFocusSection
+                            tasks={todaysFocus.tasks || []}
                             isAdmin={isAdmin}
                         />
                     ) : (

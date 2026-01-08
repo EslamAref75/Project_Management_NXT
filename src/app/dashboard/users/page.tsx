@@ -54,7 +54,9 @@ export default async function UsersPage() {
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex flex-col">
-                                        <span>{user.username}</span>
+                                        <a href={`/dashboard/users/${user.id}`} className="hover:underline hover:text-primary transition-colors">
+                                            <span>{user.username}</span>
+                                        </a>
                                         <span className="text-xs text-muted-foreground">{user.email}</span>
                                     </div>
                                 </TableCell>

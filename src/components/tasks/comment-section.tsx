@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -23,7 +24,7 @@ interface Comment {
 // Render content with highlighted mentions
 function renderContentWithMentions(content: string) {
     const mentionRegex = /@(\w+)/g
-    const parts: (string | JSX.Element)[] = []
+    const parts: (string | React.ReactNode)[] = []
     let lastIndex = 0
     let match
 
@@ -32,7 +33,7 @@ function renderContentWithMentions(content: string) {
         if (match.index > lastIndex) {
             parts.push(content.substring(lastIndex, match.index))
         }
-        
+
         // Add mention as badge
         parts.push(
             <Badge
@@ -43,15 +44,15 @@ function renderContentWithMentions(content: string) {
                 @{match[1]}
             </Badge>
         )
-        
+
         lastIndex = mentionRegex.lastIndex
     }
-    
+
     // Add remaining text
     if (lastIndex < content.length) {
         parts.push(content.substring(lastIndex))
     }
-    
+
     return parts.length > 0 ? parts : content
 }
 
@@ -91,17 +92,17 @@ export function CommentSection({
     const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = e.target.value
         setContent(value)
-        
+
         const cursorPosition = e.target.selectionStart
         const textBeforeCursor = value.substring(0, cursorPosition)
         const lastAtIndex = textBeforeCursor.lastIndexOf('@')
-        
+
         // Check if @ was just typed and we're still in a mention context
         if (lastAtIndex !== -1) {
             const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1)
             // Check if there's a space or newline after @ (meaning mention ended)
             const hasSpaceAfter = /[\s\n]/.test(textAfterAt)
-            
+
             if (!hasSpaceAfter) {
                 const query = textAfterAt
                 setMentionQuery(query)
@@ -110,7 +111,7 @@ export function CommentSection({
                 return
             }
         }
-        
+
         setShowMentions(false)
     }
 
@@ -119,7 +120,7 @@ export function CommentSection({
         if (showMentions && filteredUsers.length > 0) {
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
-                setSelectedMentionIndex(prev => 
+                setSelectedMentionIndex(prev =>
                     prev < filteredUsers.length - 1 ? prev + 1 : prev
                 )
             } else if (e.key === 'ArrowUp') {
@@ -137,22 +138,22 @@ export function CommentSection({
     // Insert selected mention into textarea
     const insertMention = (user: User) => {
         if (!textareaRef.current) return
-        
+
         const textarea = textareaRef.current
         const cursorPosition = textarea.selectionStart
         const textBeforeCursor = content.substring(0, cursorPosition)
         const lastAtIndex = textBeforeCursor.lastIndexOf('@')
-        
+
         if (lastAtIndex !== -1) {
             const textAfterCursor = content.substring(cursorPosition)
-            const newContent = 
-                content.substring(0, lastAtIndex) + 
-                `@${user.username} ` + 
+            const newContent =
+                content.substring(0, lastAtIndex) +
+                `@${user.username} ` +
                 textAfterCursor
-            
+
             setContent(newContent)
             setShowMentions(false)
-            
+
             // Set cursor position after inserted mention
             setTimeout(() => {
                 const newCursorPos = lastAtIndex + user.username.length + 2 // +2 for @ and space
@@ -175,7 +176,7 @@ export function CommentSection({
         setLoading(false)
         setContent("")
         setShowMentions(false)
-        
+
         if (result?.success) {
             router.refresh()
         }
@@ -199,7 +200,7 @@ export function CommentSection({
                             required
                             className="min-h-[100px]"
                         />
-                        
+
                         {/* Mention Autocomplete Dropdown */}
                         {showMentions && filteredUsers.length > 0 && (
                             <div className="absolute z-50 top-full left-0 mt-1 w-[300px] rounded-md border bg-popover shadow-lg">
@@ -216,8 +217,8 @@ export function CommentSection({
                                             className={`
                                                 flex items-center gap-2 px-2 py-1.5 rounded-sm cursor-pointer
                                                 transition-colors select-none
-                                                ${index === selectedMentionIndex 
-                                                    ? "bg-accent text-accent-foreground" 
+                                                ${index === selectedMentionIndex
+                                                    ? "bg-accent text-accent-foreground"
                                                     : "hover:bg-accent/50"
                                                 }
                                             `}
@@ -268,7 +269,7 @@ export function CommentSection({
                             <div className="flex-1 space-y-1">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-semibold">{comment.author.username}</span>
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>
                                         {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                                     </span>
                                 </div>

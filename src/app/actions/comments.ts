@@ -15,7 +15,7 @@ const commentSchema = z.object({
 
 // Extract @mentions from text (format: @username)
 function extractMentions(text: string): string[] {
-    const mentionRegex = /@(\w+)/g
+    const mentionRegex = /@([\w.-]+)/g
     const matches = text.match(mentionRegex)
     if (!matches) return []
     // Remove @ symbol and return unique usernames
@@ -58,7 +58,9 @@ export async function createComment(formData: FormData) {
 
         // Extract mentions from content
         const mentionedUsernames = extractMentions(validated.data.content)
-        
+        console.log("📝 Comment Content:", validated.data.content)
+        console.log("👀 Extracted Mentions:", mentionedUsernames)
+
         if (mentionedUsernames.length > 0) {
             // Get mentioned users
             const mentionedUsers = await prisma.user.findMany({
@@ -67,6 +69,7 @@ export async function createComment(formData: FormData) {
                 },
                 select: { id: true, username: true }
             })
+            console.log("👥 Found Mentioned Users:", mentionedUsers)
 
             const author = await prisma.user.findUnique({
                 where: { id: parseInt(session.user.id) },
@@ -76,7 +79,10 @@ export async function createComment(formData: FormData) {
             // Create mention records and notifications
             for (const user of mentionedUsers) {
                 // Don't notify if user mentions themselves
-                if (user.id === parseInt(session.user.id)) continue
+                if (user.id === parseInt(session.user.id)) {
+                    console.log("🚫 Skipping self-mention for user:", user.username)
+                    continue
+                }
 
                 // Create mention record
                 await prisma.commentMention.create({
@@ -87,16 +93,17 @@ export async function createComment(formData: FormData) {
                 })
 
                 // Create notification for mentioned user
+                console.log("🔔 Creating notification for:", user.username)
                 await createProjectNotification(
                     validated.data.projectId,
                     user.id,
                     {
                         type: "comment_mention",
-                        entityType: "comment",
-                        entityId: comment.id,
+                        entityType: "comment_mention",
+                        entityId: validated.data.taskId,
                         title: "You were mentioned in a comment",
                         message: `${author?.username || "Someone"} mentioned you in a comment on task "${task.title}"`,
-                        soundRequired: false,
+                        soundRequired: true,
                         isUrgent: false,
                         requiresAcknowledgment: false
                     }

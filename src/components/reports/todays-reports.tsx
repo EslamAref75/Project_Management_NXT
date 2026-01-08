@@ -94,7 +94,7 @@ export function TodaysReports({ userId, userRole }: TodaysReportsProps) {
         ])
 
         const csv = [headers, ...rows]
-            .map((row) => row.map((cell) => `"${cell}"`).join(","))
+            .map((row) => row.map((cell: any) => `"${cell}"`).join(","))
             .join("\n")
 
         const blob = new Blob([csv], { type: "text/csv" })
@@ -143,7 +143,7 @@ export function TodaysReports({ userId, userRole }: TodaysReportsProps) {
                                             !selectedDate && "text-muted-foreground"
                                         )}
                                     >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        <CalendarIcon className={cn("mr-2 h-4 w-4", selectedDate && "text-primary")} />
                                         {selectedDate ? (
                                             format(selectedDate, "PPP")
                                         ) : (

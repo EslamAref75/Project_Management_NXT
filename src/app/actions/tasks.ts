@@ -788,7 +788,7 @@ export async function updateTaskStatus(taskId: number, status: string | number, 
             // Fetch the task status to get its name
             const taskStatus = await prisma.taskStatus.findUnique({
                 where: { id: taskStatusId },
-                select: { name: true, isActive: true, isFinal: true }
+                select: { name: true, isActive: true, isFinal: true, isBlocking: true } // Added isBlocking
             })
 
             if (!taskStatus) {
@@ -807,10 +807,28 @@ export async function updateTaskStatus(taskId: number, status: string | number, 
                 }
             }
 
-            statusName = taskStatus.name
-            updateData = {
-                taskStatusId: taskStatusId,
-                status: statusName // Update legacy field for backward compatibility
+            // Logic for startedAt and completedAt
+            if (taskStatus.isFinal) {
+                updateData.completedAt = new Date();
+                updateData.status = "completed"; // Sync legacy field
+            } else {
+                // If moving out of final, clear completedAt
+                if (task.completedAt) {
+                    updateData.completedAt = null;
+                    updateData.status = "in_progress"; // Default fallback
+                }
+
+                // If starting (isBlocking usually implies in-progress/working) or explicitly "in_progress"
+                if ((taskStatus.name === 'in_progress' || taskStatus.isBlocking) && !task.startedAt) {
+                    updateData.startedAt = new Date();
+                }
+            }
+
+            updateData.taskStatusId = taskStatusId
+            // Sync legacy status field for compatibility
+            if (taskStatus.name === "pending" || taskStatus.name === "waiting" || taskStatus.name === "in_progress" || taskStatus.name === "review" || taskStatus.name === "completed") {
+                statusName = taskStatus.name
+                updateData.status = statusName
             }
         } else {
             // Check if attempting to complete a blocked task (legacy status)

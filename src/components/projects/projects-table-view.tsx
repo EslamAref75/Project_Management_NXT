@@ -36,6 +36,7 @@ interface ProjectsTableViewProps {
     limit: number
     onPageChange: (page: number) => void
     users: any[]
+    onProjectDeleted?: () => void
 }
 
 export function ProjectsTableView({
@@ -79,12 +80,12 @@ export function ProjectsTableView({
                 aValue =
                     aTasks.length > 0
                         ? aTasks.filter((t: any) => t.status === "completed").length /
-                          aTasks.length
+                        aTasks.length
                         : 0
                 bValue =
                     bTasks.length > 0
                         ? bTasks.filter((t: any) => t.status === "completed").length /
-                          bTasks.length
+                        bTasks.length
                         : 0
                 break
             case "startDate":
@@ -204,7 +205,7 @@ export function ProjectsTableView({
                                             className={cn(
                                                 "text-xs",
                                                 statusColors[project.status] ||
-                                                    "bg-gray-100 text-gray-800"
+                                                "bg-gray-100 text-gray-800"
                                             )}
                                         >
                                             {project.status.replace("_", " ")}

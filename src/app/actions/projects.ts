@@ -43,6 +43,7 @@ export async function getProjectsWithFilters(params: {
     search?: string
     category?: string[]
     status?: string[]
+    priority?: string[]
     startDate?: string
     endDate?: string
     projectManager?: string
@@ -56,6 +57,7 @@ export async function getProjectsWithFilters(params: {
         search = "",
         category = [],
         status = [],
+        priority = [],
         startDate,
         endDate,
         projectManager,
@@ -94,12 +96,32 @@ export async function getProjectsWithFilters(params: {
             if (statusIds.length > 0) {
                 statusConditions.push({ projectStatusId: { in: statusIds } })
             }
-            if (statusNames.length > 0) {
-                statusConditions.push({ status: { in: statusNames }, projectStatusId: null })
+
+            // Handle specific named statuses (legacy)
+            const legacyStatusNames = statusNames.filter(s => s !== "active" && s !== "completed")
+            if (legacyStatusNames.length > 0) {
+                statusConditions.push({ status: { in: legacyStatusNames }, projectStatusId: null })
+            }
+
+            // Handle "active" meta-status (Legacy "active" OR Dynamic isActive=true)
+            if (statusNames.includes("active")) {
+                statusConditions.push({ status: "active" })
+                statusConditions.push({ projectStatus: { isActive: true } })
+            }
+
+            // Handle "completed" meta-status (Legacy "completed" OR Dynamic isFinal=true)
+            if (statusNames.includes("completed")) {
+                statusConditions.push({ status: "completed" })
+                statusConditions.push({ projectStatus: { isFinal: true } })
             }
 
             if (statusConditions.length > 0) {
                 where.OR = statusConditions
+            }
+
+            // Priority filter
+            if (priority.length > 0) {
+                where.priority = { in: priority }
             }
         }
 

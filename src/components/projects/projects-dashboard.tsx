@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { cn } from "@/lib/utils"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ProjectsSearchBar } from "./projects-search-bar"
 import { ProjectsFilters } from "./projects-filters"
@@ -13,6 +14,9 @@ import { Plus, Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { getProjectsWithFilters } from "@/app/actions/projects"
 import { getProjectTypes } from "@/app/actions/project-types"
+import { SummaryStatsCards } from "@/components/dashboard/summary-stats-cards"
+import { Folder, PlayCircle, CheckCircle2, AlertTriangle } from "lucide-react"
+
 
 type ViewMode = "card" | "table"
 
@@ -20,12 +24,18 @@ interface ProjectsDashboardProps {
     initialProjects: any[]
     initialTotal: number
     users: any[]
+    stats: {
+        total: number
+        active: number
+        completed: number
+        urgent: number
+    }
 }
 
-export function ProjectsDashboard({ initialProjects, initialTotal, users }: ProjectsDashboardProps) {
+export function ProjectsDashboard({ initialProjects, initialTotal, users, stats }: ProjectsDashboardProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
-    
+
     // State
     const [projects, setProjects] = useState(initialProjects)
     const [total, setTotal] = useState(initialTotal)
@@ -51,6 +61,9 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
     const [projectManagerFilter, setProjectManagerFilter] = useState<string>(
         searchParams.get("projectManager") || "all"
     )
+    const [priorityFilter, setPriorityFilter] = useState<string[]>(
+        searchParams.get("priority")?.split(",").filter(Boolean) || []
+    )
     const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"))
     const [limit] = useState(12)
 
@@ -74,17 +87,25 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
         if (dateRange.start) params.set("startDate", dateRange.start.toISOString().split("T")[0])
         if (dateRange.end) params.set("endDate", dateRange.end.toISOString().split("T")[0])
         if (projectManagerFilter !== "all") params.set("projectManager", projectManagerFilter)
+        if (priorityFilter.length > 0) params.set("priority", priorityFilter.join(","))
         if (viewMode !== "card") params.set("view", viewMode)
         if (page > 1) params.set("page", page.toString())
-        
+
         router.push(`/dashboard/projects?${params.toString()}`, { scroll: false })
-    }, [searchQuery, categoryFilter, statusFilter, dateRange, projectManagerFilter, viewMode, page, router])
+        // router.push(`/dashboard/projects?${params.toString()}`, { scroll: false })
+
+        // Fix for double-fetching/blinking:
+        // Use window.history.pushState to update URL without triggering Next.js Server Component refresh.
+        // This keeps the state local and prevents the page from "clearing" and re-fetching from server.
+        const newUrl = `${window.location.pathname}?${params.toString()}`
+        window.history.pushState(null, "", newUrl)
+    }, [searchQuery, categoryFilter, statusFilter, priorityFilter, dateRange, projectManagerFilter, viewMode, page])
 
     // Fetch projects with filters
     const fetchProjects = useCallback(async () => {
         setLoading(true)
         setError(null)
-        
+
         try {
             const result = await getProjectsWithFilters({
                 search: searchQuery,
@@ -93,6 +114,7 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
                 startDate: dateRange.start?.toISOString(),
                 endDate: dateRange.end?.toISOString(),
                 projectManager: projectManagerFilter !== "all" ? projectManagerFilter : undefined,
+                priority: priorityFilter,
                 page,
                 limit,
             })
@@ -108,7 +130,7 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
         } finally {
             setLoading(false)
         }
-    }, [searchQuery, categoryFilter, statusFilter, dateRange, projectManagerFilter, page, limit])
+    }, [searchQuery, categoryFilter, statusFilter, priorityFilter, dateRange, projectManagerFilter, page, limit])
 
     // Debounced search
     useEffect(() => {
@@ -126,7 +148,7 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
         setPage(1)
         fetchProjects()
         updateURLParams()
-    }, [categoryFilter, statusFilter, dateRange, projectManagerFilter, viewMode])
+    }, [categoryFilter, statusFilter, priorityFilter, dateRange, projectManagerFilter, viewMode])
 
     // Fetch when page changes
     useEffect(() => {
@@ -145,6 +167,7 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
         setSearchQuery("")
         setCategoryFilter([])
         setStatusFilter([])
+        setPriorityFilter([])
         setDateRange({})
         setProjectManagerFilter("all")
         setPage(1)
@@ -165,9 +188,65 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
                         viewMode={viewMode}
                         onViewChange={handleViewChange}
                     />
-                            <ProjectDialog onProjectCreated={fetchProjects} />
+                    <ProjectDialog onProjectCreated={fetchProjects} />
                 </div>
             </div>
+
+            <SummaryStatsCards
+                cards={[
+                    {
+                        label: "Total Projects",
+                        value: stats.total,
+                        icon: <Folder />,
+                        color: "default",
+                        onClick: () => {
+                            setCategoryFilter([])
+                            setStatusFilter([])
+                            setPriorityFilter([])
+                            setProjectManagerFilter("all")
+                            setSearchQuery("")
+                            setDateRange({})
+                        },
+                        active: statusFilter.length === 0 && priorityFilter.length === 0 && categoryFilter.length === 0
+                    },
+                    {
+                        label: "Active",
+                        value: stats.active,
+                        icon: <PlayCircle />,
+                        color: "blue",
+                        onClick: () => {
+                            setStatusFilter(["active"])
+                            // Clear conflicting filters if desired, or keep them. 
+                            // Usually "Active" card implies "Show me active projects"
+                            setPriorityFilter([]) // Clear urgent
+                        },
+                        active: statusFilter.includes("active") && statusFilter.length === 1 && priorityFilter.length === 0
+                    },
+                    {
+                        label: "Completed",
+                        value: stats.completed,
+                        icon: <CheckCircle2 />,
+                        color: "green",
+                        onClick: () => {
+                            setStatusFilter(["completed"])
+                            setPriorityFilter([])
+                        },
+                        active: statusFilter.includes("completed") && statusFilter.length === 1
+                    },
+                    {
+                        label: "Urgent",
+                        value: stats.urgent,
+                        icon: <AlertTriangle />,
+                        color: "red",
+                        onClick: () => {
+                            setPriorityFilter(["urgent"])
+                            // Urgent can be active or whatever, but let's clear explicit status filter to show all urgent
+                            setStatusFilter([])
+                        },
+                        active: priorityFilter.includes("urgent")
+                    }
+                ]}
+            />
 
             {/* Search Bar */}
             <ProjectsSearchBar
@@ -179,20 +258,21 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
                 }}
             />
 
-                    {/* Filters Panel */}
-                    <ProjectsFilters
-                        categoryFilter={categoryFilter}
-                        onCategoryChange={setCategoryFilter}
-                        statusFilter={statusFilter}
-                        onStatusChange={setStatusFilter}
-                        dateRange={dateRange}
-                        onDateRangeChange={setDateRange}
-                        projectManagerFilter={projectManagerFilter}
-                        onProjectManagerChange={setProjectManagerFilter}
-                        users={users}
-                        projectTypes={projectTypes}
-                        onClear={handleClearFilters}
-                    />
+            {/* Filters Panel */}
+            <ProjectsFilters
+                categoryFilter={categoryFilter}
+                onCategoryChange={setCategoryFilter}
+                statusFilter={statusFilter}
+                onStatusChange={setStatusFilter}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                projectManagerFilter={projectManagerFilter}
+                onProjectManagerChange={setProjectManagerFilter}
+                users={users}
+                projectTypes={projectTypes}
+                onClear={handleClearFilters}
+                priorityFilter={priorityFilter}
+            />
 
             {/* Error State */}
             {error && (
@@ -202,16 +282,15 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
                 </Alert>
             )}
 
-            {/* Loading State */}
-            {loading && (
-                <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            )}
+            {/* Loading Overlay & Content */}
+            <div className="relative min-h-[400px]">
+                {loading && (
+                    <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg transition-all duration-200">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                )}
 
-            {/* Content */}
-            {!loading && (
-                <>
+                <div className={cn("transition-opacity duration-200", loading ? "opacity-50" : "opacity-100")}>
                     {viewMode === "card" ? (
                         <ProjectsCardView
                             projects={projects}
@@ -232,8 +311,8 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users }: Proj
                             onProjectDeleted={fetchProjects}
                         />
                     )}
-                </>
-            )}
+                </div>
+            </div>
         </div>
     )
 }

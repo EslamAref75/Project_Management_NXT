@@ -150,10 +150,10 @@ export async function getAllProjectsUnreadNotificationCount() {
       stack: error?.stack,
       name: error?.name
     })
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: error?.message || "Failed to fetch unread count",
-      details: error?.stack 
+      details: error?.stack
     }
   }
 }
@@ -248,10 +248,10 @@ export async function getAllProjectsNotifications(limit: number = 15) {
       stack: error?.stack,
       name: error?.name
     })
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: error?.message || "Failed to fetch notifications",
-      details: error?.stack 
+      details: error?.stack
     }
   }
 }
@@ -326,9 +326,9 @@ export async function markProjectNotificationAsRead(
     // Prevent marking urgent notifications that require acknowledgment as read
     // They can only be marked as read after acknowledgment
     if (notification.isUrgent && notification.requiresAcknowledgment && !notification.acknowledgedAt) {
-      return { 
-        success: false, 
-        error: "Urgent notifications cannot be marked as read until acknowledged. Please acknowledge the urgent project first." 
+      return {
+        success: false,
+        error: "Urgent notifications cannot be marked as read until acknowledged. Please acknowledge the urgent project first."
       }
     }
 
@@ -550,7 +550,7 @@ export async function createProjectNotification(
     })
 
     // If user is not in ProjectUser, check if they're assigned to a task in this project
-    if (!projectUser && entityType === "task" && entityId) {
+    if (!projectUser && (entityType === "task" || entityType === "comment_mention") && entityId) {
       const task = await prisma.task.findFirst({
         where: {
           id: entityId,
@@ -569,8 +569,34 @@ export async function createProjectNotification(
         // User is not assigned to this task and not in project
         return { success: false, error: "User not in project or assigned to task" }
       }
+    } else if (!projectUser && entityType === "comment" && entityId) {
+      // For comments, check if user is assigned to the task the comment is on
+      const comment = await prisma.comment.findUnique({
+        where: { id: entityId },
+        select: { taskId: true }
+      })
+
+      if (comment && comment.taskId) {
+        const task = await prisma.task.findFirst({
+          where: {
+            id: comment.taskId,
+            projectId,
+            assignees: {
+              some: { id: userId }
+            }
+          }
+        })
+
+        if (task) {
+          projectUser = null // Allow notification
+        } else {
+          return { success: false, error: "User not assigned to the task related to this comment" }
+        }
+      } else {
+        return { success: false, error: "Comment or related task not found" }
+      }
     } else if (!projectUser) {
-      // For non-task notifications, user must be in ProjectUser
+      // For non-task/non-comment notifications, user must be in ProjectUser
       return { success: false, error: "User not in project" }
     }
 

@@ -3,10 +3,10 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { 
-    Edit, 
-    Plus, 
-    FileText, 
+import {
+    Edit,
+    Plus,
+    FileText,
     Bell,
     MoreVertical,
     Calendar,
@@ -37,6 +37,7 @@ interface ProjectHeaderProps {
         percentage: number
     }
     canEdit: boolean
+    canMarkUrgent?: boolean
 }
 
 export function ProjectHeader({ project, stats, canEdit, canMarkUrgent = false }: ProjectHeaderProps) {

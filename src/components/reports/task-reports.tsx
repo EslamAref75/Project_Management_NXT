@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, Download } from "lucide-react"
+import { Loader2, Download, Filter } from "lucide-react"
 import { getTaskReports } from "@/app/actions/reports"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
+import { DateRange } from "react-day-picker"
 import { getProjects } from "@/app/actions/reports"
 import { getUsers } from "@/app/actions/users"
 import {
@@ -34,14 +36,19 @@ export function TaskReports({ userId, userRole }: TaskReportsProps) {
     const [data, setData] = useState<any>(null)
     const [error, setError] = useState<string | null>(null)
 
+    const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>({})
+
     useEffect(() => {
         fetchData()
-    }, [])
+    }, [dateRange])
 
     const fetchData = async () => {
         setLoading(true)
         setError(null)
-        const result = await getTaskReports({})
+        const result = await getTaskReports({
+            startDate: dateRange.start,
+            endDate: dateRange.end,
+        })
         if (result.success) {
             setData(result.data)
         } else {
@@ -57,7 +64,7 @@ export function TaskReports({ userId, userRole }: TaskReportsProps) {
         const rows = data.byStatus.map((item: any) => [item.status, item.count])
 
         const csv = [headers, ...rows]
-            .map((row) => row.map((cell) => `"${cell}"`).join(","))
+            .map((row) => row.map((cell: any) => `"${cell}"`).join(","))
             .join("\n")
 
         const blob = new Blob([csv], { type: "text/csv" })
@@ -96,6 +103,31 @@ export function TaskReports({ userId, userRole }: TaskReportsProps) {
 
     return (
         <div className="space-y-6">
+            {/* Filters */}
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="space-y-2">
+                            <DatePickerWithRange
+                                date={{
+                                    from: dateRange.start,
+                                    to: dateRange.end
+                                }}
+                                setDate={(range) => setDateRange({
+                                    start: range?.from,
+                                    end: range?.to
+                                })}
+                                className="w-[240px]"
+                            />
+                        </div>
+                        <Button variant="outline" onClick={exportToCSV}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Export CSV
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* KPI Cards */}
             <div className="grid gap-4 md:grid-cols-4">
                 <Card>
@@ -232,18 +264,7 @@ export function TaskReports({ userId, userRole }: TaskReportsProps) {
                 </Card>
             </div>
 
-            {/* Export */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Export Data</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={exportToCSV}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Export to CSV
-                    </Button>
-                </CardContent>
-            </Card>
+            {/* Export section removed as it is now in filters */}
         </div>
     )
 }

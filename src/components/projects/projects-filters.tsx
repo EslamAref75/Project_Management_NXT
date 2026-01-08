@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { X, Calendar, Filter } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { format } from "date-fns"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
+import { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -40,6 +40,7 @@ interface ProjectsFiltersProps {
     users: any[]
     projectTypes?: ProjectType[]
     onClear: () => void
+    priorityFilter?: string[]
 }
 
 const statuses = ["planned", "active", "on_hold", "completed", "cancelled"]
@@ -56,10 +57,12 @@ export function ProjectsFilters({
     users,
     projectTypes = [],
     onClear,
+    priorityFilter = [],
 }: ProjectsFiltersProps) {
     const hasActiveFilters =
         categoryFilter.length > 0 ||
         statusFilter.length > 0 ||
+        priorityFilter.length > 0 ||
         dateRange.start ||
         dateRange.end ||
         projectManagerFilter !== "all"
@@ -80,24 +83,11 @@ export function ProjectsFilters({
         }
     }
 
-    const applyDatePreset = (preset: "today" | "week" | "month") => {
-        const now = new Date()
-        let start: Date
-        let end: Date = now
-
-        switch (preset) {
-            case "today":
-                start = new Date(now.setHours(0, 0, 0, 0))
-                break
-            case "week":
-                start = new Date(now.setDate(now.getDate() - 7))
-                break
-            case "month":
-                start = new Date(now.setMonth(now.getMonth() - 1))
-                break
-        }
-
-        onDateRangeChange({ start, end })
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        onDateRangeChange({
+            start: range?.from,
+            end: range?.to
+        })
     }
 
     return (
@@ -193,71 +183,14 @@ export function ProjectsFilters({
                     {/* Date Range Filter */}
                     <div className="space-y-2">
                         <Label className="text-xs">Date Range</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className={cn(
-                                        "h-9 justify-start text-left font-normal",
-                                        !dateRange.start && !dateRange.end && "text-muted-foreground"
-                                    )}
-                                >
-                                    <Calendar className="mr-2 h-4 w-4" />
-                                    {dateRange.start && dateRange.end ? (
-                                        <>
-                                            {format(dateRange.start, "MMM d")} -{" "}
-                                            {format(dateRange.end, "MMM d")}
-                                        </>
-                                    ) : dateRange.start ? (
-                                        format(dateRange.start, "MMM d")
-                                    ) : (
-                                        <span>Pick a date range</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <div className="p-3 space-y-2 border-b">
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyDatePreset("today")}
-                                        >
-                                            Today
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyDatePreset("week")}
-                                        >
-                                            This Week
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyDatePreset("month")}
-                                        >
-                                            This Month
-                                        </Button>
-                                    </div>
-                                </div>
-                                <CalendarComponent
-                                    mode="range"
-                                    selected={{
-                                        from: dateRange.start,
-                                        to: dateRange.end,
-                                    }}
-                                    onSelect={(range) =>
-                                        onDateRangeChange({
-                                            start: range?.from,
-                                            end: range?.to,
-                                        })
-                                    }
-                                    numberOfMonths={2}
-                                />
-                            </PopoverContent>
-                        </Popover>
+                        <DatePickerWithRange
+                            date={{
+                                from: dateRange.start,
+                                to: dateRange.end
+                            }}
+                            setDate={handleDateRangeChange}
+                            className="w-[240px]"
+                        />
                     </div>
 
                     {/* Project Manager Filter */}

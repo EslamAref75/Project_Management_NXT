@@ -30,6 +30,25 @@ export async function getUsers() {
     return users
 }
 
+export async function getUser(id: number) {
+    const session = await getServerSession(authOptions)
+    if (!session) throw new Error("Unauthorized")
+
+    const user = await prisma.user.findUnique({
+        where: { id },
+        include: {
+            team: { select: { id: true, name: true } },
+            roles: {
+                include: {
+                    role: true
+                }
+            }
+        }
+    })
+
+    return user
+}
+
 export async function createUser(formData: FormData) {
     const session = await getServerSession(authOptions)
     // Check for admin permissions (using legacy check for now, ideally should use RBAC)
