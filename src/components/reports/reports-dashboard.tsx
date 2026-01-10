@@ -8,6 +8,7 @@ import { TaskReports } from "./task-reports"
 import { TodaysReports } from "./todays-reports"
 import { TeamUserReports } from "./team-user-reports"
 import { ActivityReports } from "./activity-reports"
+import { ProgressReportView } from "./progress-report-view"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart3 } from "lucide-react"
 
@@ -36,10 +37,11 @@ export function ReportsDashboard({ userId, userRole }: ReportsDashboardProps) {
 
             {/* Reports Tabs */}
             <Tabs defaultValue="overview" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-6">
+                <TabsList className="flex w-full overflow-x-auto justify-start h-auto p-1">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="projects">Projects</TabsTrigger>
                     <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                    <TabsTrigger value="progress">Progress</TabsTrigger>
                     <TabsTrigger value="today">Today's Focus</TabsTrigger>
                     {canViewAllReports && (
                         <>
@@ -76,6 +78,9 @@ export function ReportsDashboard({ userId, userRole }: ReportsDashboardProps) {
                         </TabsContent>
                     </>
                 )}
+                <TabsContent value="progress" className="space-y-6">
+                    <ProgressReportView />
+                </TabsContent>
             </Tabs>
         </div>
     )

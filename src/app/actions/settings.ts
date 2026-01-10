@@ -4,13 +4,14 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { unstable_noStore as noStore } from "next/cache"
 import bcrypt from "bcryptjs"
 
 // Check if user is system administrator
 async function checkAdmin() {
     const session = await getServerSession(authOptions)
     if (!session) return { authorized: false, session: null }
-    
+
     const isAuthorized = session.user.role === "admin"
     return { authorized: isAuthorized, session }
 }
@@ -61,6 +62,50 @@ export async function getAllSettings() {
         console.error("getAllSettings Error:", e)
         return { error: "Failed to fetch settings", details: e.message }
     }
+
+}
+
+
+// Get public system settings (branding) - No auth required
+export async function getPublicSystemSettings() {
+    noStore()
+    try {
+        const setting = await prisma.systemSetting.findUnique({
+            where: { key: "general" }
+        })
+
+        if (!setting) {
+            return {
+                success: true,
+                settings: {
+                    systemName: "Qeema PMS",
+                    systemLogo: "/assets/logo.png",
+                    allowRegistration: true
+                }
+            }
+        }
+
+        const value = JSON.parse(setting.value)
+        return {
+            success: true,
+            settings: {
+                systemName: value.systemName || "Qeema PMS",
+                systemLogo: value.systemLogo || "/assets/logo.png",
+                allowRegistration: value.allowRegistration !== undefined ? value.allowRegistration : true
+            }
+        }
+    } catch (e: any) {
+        console.error("getPublicSystemSettings Error:", e)
+        // Return defaults on error to avoid breaking UI
+        return {
+            success: true,
+            settings: {
+                systemName: "Qeema PMS",
+                systemLogo: "/assets/logo.png",
+                allowRegistration: true
+            }
+        }
+    }
 }
 
 // Get a specific setting by key
@@ -110,7 +155,8 @@ export async function getSetting(key: string) {
 export async function updateSetting(
     key: string,
     value: any,
-    reason?: string
+    reason?: string,
+    category?: string // Optional category for auto-creation
 ) {
     const { authorized, session } = await checkAdmin()
     if (!authorized || !session) {
@@ -124,6 +170,10 @@ export async function updateSetting(
         })
 
         if (!existing) {
+            if (category) {
+                // Auto-create if category is provided
+                return await createSetting(key, category, value, "Auto-created via update")
+            }
             return { error: "Setting not found" }
         }
 
@@ -151,7 +201,7 @@ export async function updateSetting(
             }
         })
 
-        revalidatePath("/dashboard/settings")
+        revalidatePath("/", "layout")
         return { success: true, setting: updated }
     } catch (e: any) {
         console.error("updateSetting Error:", e)

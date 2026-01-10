@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { ReportsDashboard } from "@/components/reports/reports-dashboard"
+import { ClientReportsDashboard } from "@/components/reports/client-reports-dashboard"
 import { notFound } from "next/navigation"
 
 export default async function ReportsPage() {
@@ -9,6 +9,5 @@ export default async function ReportsPage() {
         notFound()
     }
 
-    return <ReportsDashboard userId={parseInt(session.user.id)} userRole={session.user.role || "developer"} />
+    return <ClientReportsDashboard userId={parseInt(session.user.id)} userRole={session.user.role || "developer"} />
 }
-

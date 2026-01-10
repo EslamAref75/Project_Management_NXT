@@ -3,6 +3,7 @@
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
+
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
@@ -30,38 +31,42 @@ function Calendar({
                 ),
                 nav_button_previous: "absolute left-1",
                 nav_button_next: "absolute right-1",
+
+                // V8 Keys (keeping for safety if mixed versioning or alias support)
                 table: "w-full border-collapse space-y-1",
                 head_row: "flex",
-                head_cell:
-                    "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
                 row: "flex w-full mt-2",
-                cell: cn(
-                    "h-9 w-9 text-center text-sm p-0 relative",
-                    "[&:has([aria-selected].day-range-end)]:rounded-r-full",
-                    "[&:has([aria-selected].day-range-start)]:rounded-l-full",
-                    "[&:has([aria-selected].day-outside)]:bg-slate-100/50 dark:[&:has([aria-selected].day-outside)]:bg-slate-800/50",
-                    "[&:has([aria-selected])]:bg-slate-100 dark:[&:has([aria-selected])]:bg-slate-800", // The continuous strip
-                    "first:[&:has([aria-selected])]:rounded-l-full last:[&:has([aria-selected])]:rounded-r-full",
-                    "focus-within:relative focus-within:z-20"
-                ),
-                day: cn(
+                cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+
+                // V9 Keys (Correct mapping)
+                month_grid: "w-full border-collapse space-y-1", // Table replacement
+                weekdays: "flex", // Thead/Row replacement
+                weekday: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]", // Th replacement
+                week: "flex w-full mt-2", // Tr replacement
+                day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100", // Td/Button replacement depending on setup. In v9 often TD.
+                day_button: cn(
                     buttonVariants({ variant: "ghost" }),
-                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100 placeholder:opacity-0 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                ),
-                day_range_start: "day-range-start aria-selected:bg-blue-600 aria-selected:text-white",
-                day_range_end: "day-range-end aria-selected:bg-blue-600 aria-selected:text-white",
+                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground"
+                ), // Button replacement
+
+                // Selection / State styles (V9 uses modifiers classes often, V8 uses these keys)
                 day_selected:
-                    "bg-blue-600 text-white hover:bg-blue-600 hover:text-white focus:bg-blue-600 focus:text-white rounded-full",
+                    "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                 day_today: "bg-accent text-accent-foreground",
                 day_outside:
-                    "day-outside text-muted-foreground opacity-50 aria-selected:bg-slate-100/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+                    "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
                 day_disabled: "text-muted-foreground opacity-50",
                 day_range_middle:
-                    "aria-selected:bg-transparent aria-selected:text-foreground", // Text on the strip
+                    "aria-selected:bg-accent aria-selected:text-accent-foreground",
                 day_hidden: "invisible",
+
                 ...classNames,
             }}
-
+            components={{
+                IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+                IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+            }}
             {...props}
         />
     )
@@ -69,4 +74,3 @@ function Calendar({
 Calendar.displayName = "Calendar"
 
 export { Calendar }
-

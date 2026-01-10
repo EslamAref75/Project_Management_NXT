@@ -10,8 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
+import { useSystemSettings } from "@/components/providers/system-settings-provider"
+import Image from "next/image"
 
 export default function LoginPage() {
+    const { settings } = useSystemSettings()
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const router = useRouter()
@@ -50,11 +53,21 @@ export default function LoginPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
             <Card className="w-full max-w-md">
-                <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-                    <CardDescription>
-                        Enter your credentials to access the dashboard
-                    </CardDescription>
+                <CardHeader className="space-y-4 text-center">
+                    <div className="flex justify-center mb-2">
+                        <div className="relative h-16 w-16 overflow-hidden rounded bg-white p-1">
+                            <Image
+                                src={settings.systemLogo}
+                                alt="Logo"
+                                fill
+                                className="object-contain"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <CardTitle className="text-2xl font-bold">{settings.systemName}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">Sign in to continue</p>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,12 +102,14 @@ export default function LoginPage() {
                     </form>
                 </CardContent>
                 <CardFooter className="flex justify-center">
-                    <div className="text-sm text-muted-foreground">
-                        Don&apos;t have an account?{" "}
-                        <Link href="/register" className="text-primary hover:underline">
-                            Sign up
-                        </Link>
-                    </div>
+                    {settings.allowRegistration && (
+                        <div className="text-sm text-muted-foreground">
+                            Don&apos;t have an account?{" "}
+                            <Link href="/register" className="text-primary hover:underline">
+                                Sign up
+                            </Link>
+                        </div>
+                    )}
                 </CardFooter>
             </Card>
         </div>

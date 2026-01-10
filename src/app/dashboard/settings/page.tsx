@@ -6,6 +6,7 @@ import { PasswordForm } from "@/components/settings/password-form"
 import { RBACPermissionsViewServer } from "@/components/settings/rbac-permissions-view-server"
 import { RBACInitializeButton } from "@/components/settings/rbac-initialize-button"
 import { UserSettingsPanel } from "@/components/settings/user-settings-panel"
+import { BrandingSettingsPanel } from "@/components/settings/branding-settings-panel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getUserSettings, getResolvedUserSettings } from "@/app/actions/user-settings"
 import Link from "next/link"
@@ -33,7 +34,7 @@ export default async function SettingsPage() {
     const resolvedSettings = resolvedResult.success ? resolvedResult.settings : {}
 
     const isAdmin = session.user.role === "admin"
-    
+
     // Check if RBAC is initialized
     const roles = await getRoles().catch(() => [])
     const isRBACInitialized = Array.isArray(roles) && roles.length > 0
@@ -65,6 +66,7 @@ export default async function SettingsPage() {
                     <TabsTrigger value="security">Security</TabsTrigger>
                     <TabsTrigger value="preferences">Preferences</TabsTrigger>
                     {isAdmin && <TabsTrigger value="roles">Roles & RBAC</TabsTrigger>}
+                    {isAdmin && <TabsTrigger value="branding">Branding</TabsTrigger>}
                     {isAdmin && <TabsTrigger value="project-metadata">Project Metadata Settings</TabsTrigger>}
                 </TabsList>
                 <TabsContent value="profile" className="space-y-4">
@@ -101,7 +103,7 @@ export default async function SettingsPage() {
                                         RBAC System Not Initialized
                                     </h3>
                                     <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
-                                        The Role-Based Access Control system needs to be initialized. 
+                                        The Role-Based Access Control system needs to be initialized.
                                         This will create default roles and permissions in the database.
                                     </p>
                                     <RBACInitializeButton />
@@ -122,13 +124,20 @@ export default async function SettingsPage() {
                     </TabsContent>
                 )}
                 {isAdmin && (
+                    <TabsContent value="branding" className="space-y-4">
+                        <div className="p-4 border rounded-lg bg-card">
+                            <BrandingSettingsPanel />
+                        </div>
+                    </TabsContent>
+                )}
+                {isAdmin && (
                     <TabsContent value="project-metadata" className="space-y-4">
                         <div className="p-4 border rounded-lg bg-card">
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="text-lg font-medium mb-2">Project Metadata Settings</h3>
                                     <p className="text-sm text-muted-foreground mb-4">
-                                        Manage project types, project statuses, and task statuses dynamically. 
+                                        Manage project types, project statuses, and task statuses dynamically.
                                         Configure workflows and metadata that apply across all projects.
                                     </p>
                                 </div>

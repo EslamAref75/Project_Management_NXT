@@ -15,6 +15,8 @@ import {
     Zap,
     Target
 } from "lucide-react"
+import Image from "next/image"
+import { useSystemSettings } from "@/components/providers/system-settings-provider"
 
 const sidebarItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -30,12 +32,21 @@ const sidebarItems = [
 
 export function Sidebar() {
     const pathname = usePathname()
+    const { settings } = useSystemSettings()
 
     return (
         <div className="flex h-full w-64 flex-col border-r bg-gray-900 text-white">
-            <div className="flex h-14 items-center border-b border-gray-800 px-6">
-                <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-                    <span className="text-blue-500">Qeema</span>Tech
+            <div className="flex h-14 items-center border-b border-gray-800 px-6 gap-3">
+                <div className="relative h-8 w-8 overflow-hidden rounded bg-white/10 p-1">
+                    <Image
+                        src={settings.systemLogo}
+                        alt="Logo"
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+                <Link href="/" className="font-bold text-xl truncate">
+                    {settings.systemName}
                 </Link>
             </div>
             <div className="flex-1 overflow-y-auto py-4">
