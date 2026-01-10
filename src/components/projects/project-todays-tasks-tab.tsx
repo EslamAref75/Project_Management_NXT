@@ -7,7 +7,6 @@ import { Plus, Calendar } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { useState } from "react"
-import { getTodayTasks } from "@/app/actions/today-tasks-assignment"
 
 interface ProjectTodaysTasksTabProps {
     project: any

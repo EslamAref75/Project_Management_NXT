@@ -20,12 +20,10 @@ export function TodaysFocusSection({ tasks, isAdmin = false }: TodaysFocusSectio
     const router = useRouter()
     const [updating, setUpdating] = useState<number | null>(null)
 
-    const handleComplete = async (taskId: number) => {
-        setUpdating(taskId)
+    const handleComplete = async (task: any) => {
+        setUpdating(task.id)
         try {
-            const formData = new FormData()
-            formData.append("status", "completed")
-            await updateTaskStatus(taskId, formData)
+            await updateTaskStatus(task.id, "completed", task.project.id)
             router.refresh()
         } catch (error) {
             console.error("Failed to update task:", error)
@@ -147,7 +145,7 @@ export function TodaysFocusSection({ tasks, isAdmin = false }: TodaysFocusSectio
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => handleComplete(task.id)}
+                                        onClick={() => handleComplete(task)}
                                         disabled={updating === task.id || blocked}
                                         className="flex-shrink-0"
                                     >

@@ -176,7 +176,7 @@ export function OverviewReports({ userId, userRole }: OverviewReportsProps) {
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={({ status, count }) => `${status}: ${count}`}
+                                    label={(entry: any) => `${entry.status}: ${entry.count}`}
                                     outerRadius={80}
                                     fill="#8884d8"
                                     dataKey="count"
@@ -205,7 +205,7 @@ export function OverviewReports({ userId, userRole }: OverviewReportsProps) {
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={({ status, count }) => `${status}: ${count}`}
+                                    label={(entry: any) => `${entry.status}: ${entry.count}`}
                                     outerRadius={80}
                                     fill="#8884d8"
                                     dataKey="count"

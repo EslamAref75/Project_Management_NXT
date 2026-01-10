@@ -63,7 +63,7 @@ export function SummaryStatsCards({ cards, isLoading = false }: SummaryStatsCard
                 )
 
                 const StyledIcon = React.isValidElement(card.icon)
-                    ? React.cloneElement(card.icon as React.ReactElement, { className: iconClasses })
+                    ? React.cloneElement(card.icon as React.ReactElement<any>, { className: iconClasses })
                     : card.icon
 
                 const CardContentWrapper = (

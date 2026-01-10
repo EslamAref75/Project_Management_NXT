@@ -10,18 +10,19 @@ interface TaskActionsProps {
     task: {
         id: number
         title: string
-        description: string | null
-        priority: string
-        status: string
-        dueDate: Date | null
-        assignees?: Array<{ id: number; username: string }>
+        description?: string | null
+        priority?: string
+        status?: string
+        dueDate?: Date | null
+        assignees?: Array<{ id: number; username: string; [key: string]: any }>
         subtasks?: Array<any>
         comments?: Array<any>
         dependencies?: Array<any>
         dependents?: Array<any>
+        [key: string]: any // Allow additional properties
     }
     projectId: number
-    users?: Array<{ id: number; username: string }>
+    users?: Array<{ id: number; username: string; [key: string]: any }>
 }
 
 export function TaskActions({ task, projectId, users = [] }: TaskActionsProps) {
@@ -52,11 +53,11 @@ export function TaskActions({ task, projectId, users = [] }: TaskActionsProps) {
                 task={{
                     id: task.id,
                     title: task.title,
-                    description: task.description,
-                    priority: task.priority,
-                    status: task.status,
-                    dueDate: task.dueDate,
-                    assignees: task.assignees
+                    description: task.description ?? null,
+                    priority: (task.priority || "normal") as string,
+                    status: (task.status || "pending") as string,
+                    dueDate: task.dueDate ?? null,
+                    assignees: (task.assignees || []).map((a: any) => ({ id: a.id, username: a.username }))
                 }}
                 projectId={projectId}
                 users={users}

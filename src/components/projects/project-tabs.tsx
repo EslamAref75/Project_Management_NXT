@@ -55,7 +55,7 @@ export function ProjectTabs({ project, users, stats }: ProjectTabsProps) {
             </TabsContent>
 
             <TabsContent value="team" className="space-y-6">
-                <ProjectTeamTab project={project} />
+                <ProjectTeamTab project={project} users={users} />
             </TabsContent>
 
             <TabsContent value="todays-tasks" className="space-y-6">

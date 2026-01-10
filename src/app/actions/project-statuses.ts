@@ -92,11 +92,11 @@ export async function createProjectStatus(formData: FormData) {
     const isActiveValue = formData.get("isActive")
     const orderIndex = formData.get("orderIndex")
     
-    // Handle boolean values
-    const isDefault = isDefaultValue === "true" || isDefaultValue === true
-    const isFinal = isFinalValue === "true" || isFinalValue === true
-    const isUrgent = isUrgentValue === "true" || isUrgentValue === true
-    const isActive = isActiveValue === "true" || isActiveValue === true
+    // Handle boolean values - FormData returns strings, so convert properly
+    const isDefault = String(isDefaultValue) === "true"
+    const isFinal = String(isFinalValue) === "true"
+    const isUrgent = String(isUrgentValue) === "true"
+    const isActive = String(isActiveValue) === "true"
 
     // If setting as default, unset other defaults
     if (isDefault) {
@@ -222,11 +222,11 @@ export async function updateProjectStatus(id: number, formData: FormData) {
     const isActiveValue = formData.get("isActive")
     const orderIndex = formData.get("orderIndex")
     
-    // Handle boolean values - can be "true"/"false" string or boolean
-    const isDefault = isDefaultValue === "true" || isDefaultValue === true
-    const isFinal = isFinalValue === "true" || isFinalValue === true
-    const isUrgent = isUrgentValue === "true" || isUrgentValue === true
-    const isActive = isActiveValue === "true" || isActiveValue === true
+    // Handle boolean values - FormData returns strings, so convert properly
+    const isDefault = String(isDefaultValue) === "true"
+    const isFinal = String(isFinalValue) === "true"
+    const isUrgent = String(isUrgentValue) === "true"
+    const isActive = String(isActiveValue) === "true"
     
     console.log("Update - Parsed form values:", {
         name,

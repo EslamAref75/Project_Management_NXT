@@ -36,8 +36,9 @@ interface Dependency {
             name: string
         } | null
     }
-    dependencyType: string
-    createdAt: string
+    dependencyType?: string
+    createdAt: string | Date
+    [key: string]: any // Allow additional properties
 }
 
 interface DependencyListProps {

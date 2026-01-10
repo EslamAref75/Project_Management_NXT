@@ -20,6 +20,12 @@ export type ActionType =
   | "role_changed"
   | "user_activated"
   | "user_suspended"
+  // RBAC
+  | "role_created"
+  | "role_updated"
+  | "role_deleted"
+  | "role_assigned"
+  | "role_removed"
   // Project
   | "project_created"
   | "project_updated"
@@ -28,6 +34,17 @@ export type ActionType =
   | "team_member_added"
   | "team_member_removed"
   | "project_settings_changed"
+  | "project_marked_urgent"
+  | "project_urgent_acknowledged"
+  | "project_urgent_removed"
+  | "project_assigned_to_team"
+  | "project_removed_from_team"
+  | "file_uploaded"
+  | "file_deleted"
+  // Team
+  | "team_created"
+  | "team_updated"
+  | "team_deleted"
   // Task
   | "task_created"
   | "task_updated"
@@ -35,6 +52,7 @@ export type ActionType =
   | "task_assigned"
   | "task_reassigned"
   | "task_status_changed"
+  | "task_status_updated"
   | "task_priority_changed"
   | "subtask_created"
   | "subtask_updated"

@@ -60,7 +60,7 @@ export function NotificationList({ onClose, onCountChange }: NotificationListPro
             setNotifications(prev => 
                 prev.map(n => n.id === id ? { ...n, isRead: true } : n)
             )
-            const unreadCount = notifications.filter(n => !n.id !== id && !n.isRead).length
+            const unreadCount = notifications.filter(n => n.id !== id && !n.isRead).length
             onCountChange?.(unreadCount)
         }
     }

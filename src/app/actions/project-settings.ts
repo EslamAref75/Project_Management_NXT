@@ -241,10 +241,11 @@ export async function updateProjectSetting(
             data: {
                 projectId,
                 settingKey: key,
+                category: updated.category,
                 oldValue: oldValue,
                 newValue: newValue,
                 reason: reason || null,
-                userId: parseInt(session.user.id),
+                changedBy: parseInt(session.user.id),
                 settingId: updated.id
             }
         })
@@ -302,10 +303,11 @@ export async function createProjectSetting(
             data: {
                 projectId,
                 settingKey: key,
+                category: category,
                 oldValue: null,
                 newValue: JSON.stringify(value),
                 reason: "Setting created",
-                userId: parseInt(session.user.id),
+                changedBy: parseInt(session.user.id),
                 settingId: newSetting.id
             }
         })
@@ -408,10 +410,11 @@ export async function resetProjectSetting(projectId: number, key: string) {
             data: {
                 projectId,
                 settingKey: key,
+                category: setting.category,
                 oldValue: setting.value,
                 newValue: JSON.stringify({ enabled: false }),
                 reason: "Reset to global default",
-                userId: parseInt(session.user.id),
+                changedBy: parseInt(session.user.id),
                 settingId: setting.id
             }
         })

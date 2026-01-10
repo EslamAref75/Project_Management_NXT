@@ -104,18 +104,17 @@ export function TasksManagementPage({ users, teams, initialCounts = {} }: TasksM
     })
 
     // Filter projects based on search
-    const filteredProjects = projects.filter(project => {
+    const filteredProjects = projects.filter((project: any) => {
         if (searchQuery === "") return true
         
         const query = searchQuery.toLowerCase()
-        const matchesName = project.name.toLowerCase().includes(query) ||
-            project.code.toLowerCase().includes(query)
+        const matchesName = project.name?.toLowerCase().includes(query) || false
         
-        const matchesTask = project.todayTasks.some(task =>
-            task.title.toLowerCase().includes(query) ||
-            task.assignees.some(a => 
-                a.username.toLowerCase().includes(query) ||
-                a.email.toLowerCase().includes(query)
+        const matchesTask = (project.todayTasks || []).some((task: any) =>
+            task.title?.toLowerCase().includes(query) ||
+            (task.assignees || []).some((a: any) => 
+                a.username?.toLowerCase().includes(query) ||
+                a.email?.toLowerCase().includes(query)
             )
         )
 

@@ -50,7 +50,7 @@ interface AssignmentModalProps {
 
 export function AssignmentModal({ userId, userName, open, onOpenChange, selectedDate }: AssignmentModalProps) {
     const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
-    const [projects, setProjects] = useState<Array<{ id: number; name: string; code: string }>>([])
+    const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([])
     const [availableTasks, setAvailableTasks] = useState<Task[]>([])
     const [todayTasks, setTodayTasks] = useState<Task[]>([])
     const [searchQuery, setSearchQuery] = useState("")
@@ -228,7 +228,7 @@ export function AssignmentModal({ userId, userName, open, onOpenChange, selected
                                 <SelectContent>
                                     {projects.map((project) => (
                                         <SelectItem key={project.id} value={project.id.toString()}>
-                                            <span className="font-medium">{project.code}</span> - {project.name}
+                                            {project.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

@@ -6,12 +6,13 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const userId = parseInt(params.id);
+    const { id } = await params;
+    const userId = parseInt(id);
     const mode = request.nextUrl.searchParams.get("period") || "current_week";
 
     let start, end;

@@ -92,11 +92,11 @@ export async function createTaskStatus(formData: FormData) {
     const orderIndex = formData.get("orderIndex")
     const isActiveValue = formData.get("isActive")
     
-    // Handle boolean values
-    const isDefault = isDefaultValue === "true" || isDefaultValue === true
-    const isFinal = isFinalValue === "true" || isFinalValue === true
-    const isBlocking = isBlockingValue === "true" || isBlockingValue === true
-    const isActive = isActiveValue === "true" || isActiveValue === true
+    // Handle boolean values - FormData returns strings, so convert properly
+    const isDefault = String(isDefaultValue) === "true"
+    const isFinal = String(isFinalValue) === "true"
+    const isBlocking = String(isBlockingValue) === "true"
+    const isActive = String(isActiveValue) === "true"
     
     console.log("Creating task status with values:", {
         name,
@@ -221,11 +221,11 @@ export async function updateTaskStatus(id: number, formData: FormData) {
     const isActiveValue = formData.get("isActive")
     const orderIndex = formData.get("orderIndex")
     
-    // Handle boolean values
-    const isDefault = isDefaultValue === "true" || isDefaultValue === true
-    const isFinal = isFinalValue === "true" || isFinalValue === true
-    const isBlocking = isBlockingValue === "true" || isBlockingValue === true
-    const isActive = isActiveValue === "true" || isActiveValue === true
+    // Handle boolean values - FormData returns strings, so convert properly
+    const isDefault = String(isDefaultValue) === "true"
+    const isFinal = String(isFinalValue) === "true"
+    const isBlocking = String(isBlockingValue) === "true"
+    const isActive = String(isActiveValue) === "true"
     
     console.log("Update - Parsed form values:", {
         name,

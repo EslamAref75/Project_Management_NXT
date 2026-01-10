@@ -24,8 +24,8 @@ export default async function AdminRolesPage() {
   ])
 
   const roles = Array.isArray(rolesResult) ? rolesResult : []
-  const permissions = permissionsResult?.permissions || []
-  const permissionsGrouped = permissionsResult?.grouped || {}
+  const permissions = (permissionsResult && !('error' in permissionsResult)) ? permissionsResult.permissions : []
+  const permissionsGrouped = (permissionsResult && !('error' in permissionsResult)) ? permissionsResult.grouped : {}
 
   return (
     <div className="space-y-6">

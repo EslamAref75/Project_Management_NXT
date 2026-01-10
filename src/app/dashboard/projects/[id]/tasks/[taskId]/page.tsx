@@ -72,9 +72,9 @@ export default async function TaskPage({ params }: { params: Params }) {
                     <p className="text-muted-foreground">{task.description || "No description"}</p>
                 </div>
                 <TaskActions 
-                    task={task}
+                    task={task as any}
                     projectId={projectId}
-                    users={users}
+                    users={users as any}
                 />
             </div>
 
@@ -171,7 +171,10 @@ export default async function TaskPage({ params }: { params: Params }) {
                         ) : (
                             <>
                                 <DependencyList 
-                                    dependencies={dependencies}
+                                    dependencies={dependencies.map((dep: any) => ({
+                                        ...dep,
+                                        createdAt: dep.createdAt instanceof Date ? dep.createdAt.toISOString() : dep.createdAt
+                                    }))}
                                     taskId={task.id}
                                     projectId={projectId}
                                 />
@@ -213,7 +216,12 @@ export default async function TaskPage({ params }: { params: Params }) {
                             comments={task.comments || []} 
                             taskId={task.id} 
                             projectId={projectId}
-                            users={users}
+                            users={users.map((user: any) => ({
+                                id: user.id,
+                                username: user.username,
+                                email: user.email || undefined,
+                                avatarUrl: user.avatarUrl || undefined
+                            }))}
                         />
                     </div>
                 </div>
