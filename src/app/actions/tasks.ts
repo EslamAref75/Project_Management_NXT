@@ -449,22 +449,35 @@ export async function getAllTasks() {
     if (!session) throw new Error("Unauthorized")
 
     const tasks = await prisma.task.findMany({
-        include: {
-            assignees: { select: { username: true, email: true, avatarUrl: true } },
-            project: { select: { id: true, name: true } },
-            subtasks: {
-                include: {
-                    assignedTo: { select: { id: true, username: true, avatarUrl: true } }
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            priority: true,
+            status: true,
+            dueDate: true,
+            projectId: true,
+            createdAt: true,
+            createdById: true,
+            assignees: {
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    avatarUrl: true
                 }
             },
-            dependencies: {
-                include: {
-                    dependsOnTask: {
-                        select: {
-                            id: true,
-                            status: true
-                        }
-                    }
+            project: {
+                select: {
+                    id: true,
+                    name: true,
+                    status: true
+                }
+            },
+            _count: {
+                select: {
+                    subtasks: true,
+                    dependencies: true
                 }
             }
         },
@@ -487,17 +500,32 @@ export async function getMyTasks() {
                 }
             }
         },
-        include: {
-            assignees: { select: { username: true, email: true, avatarUrl: true } },
-            project: { select: { id: true, name: true } },
-            dependencies: {
-                include: {
-                    dependsOnTask: {
-                        select: {
-                            id: true,
-                            status: true
-                        }
-                    }
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            priority: true,
+            status: true,
+            dueDate: true,
+            projectId: true,
+            createdAt: true,
+            assignees: {
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    avatarUrl: true
+                }
+            },
+            project: {
+                select: {
+                    id: true,
+                    name: true
+                }
+            },
+            _count: {
+                select: {
+                    dependencies: true
                 }
             }
         },
