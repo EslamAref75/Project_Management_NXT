@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/activity-logger"
 import { createProjectNotification } from "./project-notifications"
 import { z } from "zod"
+import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
 
 const markUrgentSchema = z.object({
     projectId: z.coerce.number(),
@@ -51,16 +52,19 @@ export async function markProjectUrgent(formData: FormData) {
         }
 
         const userId = parseInt(session.user.id)
-        const userRole = session.user.role || "developer"
-        const isAdmin = userRole === "admin"
-        const isPM = project.projectManagerId === userId || project.createdById === userId
-        const isTeamLead = project.projectTeams.some(pt => 
-            pt.team.teamLeadId === userId
+        
+        // Check if user has permission to mark urgent (using RBAC, no role-based bypass)
+        const hasPermission = await hasPermissionWithoutRoleBypass(
+            userId,
+            "project.markUrgent",
+            validated.data.projectId
         )
 
-        // Check if user has permission to mark urgent
-        if (!isAdmin && !isPM && !isTeamLead) {
-            return { error: "Unauthorized: Only admins, project managers, and team leads can mark projects as urgent" }
+        // Also allow project manager and creator
+        const isPM = project.projectManagerId === userId || project.createdById === userId
+
+        if (!hasPermission && !isPM) {
+            return { error: "Unauthorized: You don't have permission to mark this project as urgent" }
         }
 
         // Update project priority
@@ -255,8 +259,6 @@ export async function removeUrgentPriority(projectId: number) {
     if (!session) return { error: "Unauthorized" }
 
     const userId = parseInt(session.user.id)
-    const userRole = session.user.role || "developer"
-    const isAdmin = userRole === "admin"
 
     try {
         const project = await prisma.project.findUnique({
@@ -267,9 +269,18 @@ export async function removeUrgentPriority(projectId: number) {
             return { error: "Project not found" }
         }
 
-        // Only admin or project manager can remove urgent priority
-        if (!isAdmin && project.projectManagerId !== userId && project.createdById !== userId) {
-            return { error: "Unauthorized: Only admins and project managers can remove urgent priority" }
+        // Check if user has permission to remove urgent priority (using RBAC, no role-based bypass)
+        const hasPermission = await hasPermissionWithoutRoleBypass(
+            userId,
+            "project.removeUrgent",
+            projectId
+        )
+
+        // Also allow project manager and creator
+        const isPM = project.projectManagerId === userId || project.createdById === userId
+
+        if (!hasPermission && !isPM) {
+            return { error: "Unauthorized: You don't have permission to remove urgent priority from this project" }
         }
 
         // Update project
