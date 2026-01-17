@@ -86,5 +86,5 @@ export const authOptions: NextAuthOptions = {
             return token
         }
     },
-    secret: process.env.NEXTAUTH_SECRET || "fallback-secret-key-change-in-production"
+    secret: process.env.NEXTAUTH_SECRET,
 }
