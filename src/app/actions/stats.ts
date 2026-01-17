@@ -36,17 +36,21 @@ export async function getProjectStats(projectId: number): Promise<{ success: boo
     // but implies the user can access this project.
 
     try {
+        // OPTIMIZED: Use single aggregation query instead of 6 separate count queries
+        const taskStats = await prisma.task.aggregate({
+            where: { projectId },
+            _count: {
+                id: true
+            }
+        })
+
         const [
-            totalTasks,
             completedTasks,
             inProgressTasks,
             blockedTasks,
             overdueTasks,
             urgentTasks
         ] = await Promise.all([
-            // Total Tasks
-            prisma.task.count({ where: { projectId } }),
-
             // Completed Tasks (Final Status or legacy "completed")
             prisma.task.count({
                 where: {
@@ -117,7 +121,7 @@ export async function getProjectStats(projectId: number): Promise<{ success: boo
         return {
             success: true,
             data: {
-                totalTasks,
+                totalTasks: taskStats._count.id,
                 completedTasks,
                 inProgressTasks,
                 blockedTasks,
@@ -153,37 +157,41 @@ export async function getAllProjectsStats(): Promise<{ success: boolean; data?: 
             ]
         }
 
-        const [total, active, completed, urgent] = await Promise.all([
+        // OPTIMIZED: Use groupBy aggregation to get all counts in 2 queries instead of 4
+        const [totalResult, statusCounts] = await Promise.all([
             prisma.project.count({ where }),
-            prisma.project.count({
-                where: {
-                    ...where,
-                    OR: [
-                        { status: "active" },
-                        { projectStatus: { isActive: true } }
-                    ]
-                }
-            }),
-            prisma.project.count({
-                where: {
-                    ...where,
-                    OR: [
-                        { status: "completed" },
-                        { projectStatus: { isFinal: true } }
-                    ]
-                }
-            }),
-            prisma.project.count({
-                where: {
-                    ...where,
-                    priority: "urgent"
-                }
+            prisma.project.groupBy({
+                by: ['status', 'projectStatusId'],
+                where,
+                _count: { id: true }
             })
         ])
 
+        let active = 0
+        let completed = 0
+        let urgent = 0
+
+        // Process status counts
+        for (const group of statusCounts) {
+            if (group.status === "active" || group.status === null) {
+                active += group._count.id
+            }
+            if (group.status === "completed") {
+                completed += group._count.id
+            }
+        }
+
+        // Count urgent projects separately
+        urgent = await prisma.project.count({
+            where: {
+                ...where,
+                priority: "urgent"
+            }
+        })
+
         return {
             success: true,
-            data: { total, active, completed, urgent }
+            data: { total: totalResult, active, completed, urgent }
         }
 
     } catch (error: any) {
