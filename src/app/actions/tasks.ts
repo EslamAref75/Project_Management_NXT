@@ -192,7 +192,16 @@ export async function getTasksWithFilters(params: {
                 skip,
                 take: limit,
                 orderBy: { createdAt: "desc" },
-                include: {
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    priority: true,
+                    status: true,
+                    dueDate: true,
+                    projectId: true,
+                    createdAt: true,
+                    createdById: true,
                     assignees: {
                         select: {
                             id: true,
@@ -207,28 +216,12 @@ export async function getTasksWithFilters(params: {
                             name: true,
                         },
                     },
-                    dependencies: {
-                        include: {
-                            dependsOnTask: {
-                                select: {
-                                    id: true,
-                                    status: true,
-                                    title: true,
-                                },
-                            },
+                    _count: {
+                        select: {
+                            dependencies: true,
+                            dependents: true,
                         },
                     },
-                    dependents: {
-                        include: {
-                            task: {
-                                select: {
-                                    id: true,
-                                    status: true,
-                                },
-                            },
-                        },
-                    },
-                    // plannedDate is a direct field and will be included automatically
                 },
             }),
             prisma.task.count({ where }),
@@ -356,27 +349,101 @@ export async function getTask(id: number) {
 
     const task = await prisma.task.findUnique({
         where: { id },
-        include: {
-            assignees: { select: { username: true, email: true, avatarUrl: true } },
-            comments: {
-                orderBy: { createdAt: "desc" },
-                include: {
-                    author: { select: { username: true, email: true, avatarUrl: true } }
-                }
-            },
-            project: { select: { id: true, name: true } },
-            attachments: true,
-            team: { select: { id: true, name: true } },
-            creator: { select: { id: true, username: true, email: true, avatarUrl: true } },
-            taskStatus: { select: { id: true, name: true, color: true } },
-            subtasks: {
-                include: {
-                    assignedTo: { select: { id: true, username: true, avatarUrl: true } }
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            priority: true,
+            status: true,
+            dueDate: true,
+            projectId: true,
+            createdAt: true,
+            createdById: true,
+            startedAt: true,
+            completedAt: true,
+            taskStatusId: true,
+            teamId: true,
+            assignees: {
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    avatarUrl: true,
                 },
-                orderBy: { createdAt: 'asc' }
+            },
+            project: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+            },
+            taskStatus: {
+                select: {
+                    id: true,
+                    name: true,
+                    color: true,
+                },
+            },
+            team: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+            },
+            creator: {
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    avatarUrl: true,
+                },
+            },
+            attachments: {
+                select: {
+                    id: true,
+                    filename: true,
+                    url: true,
+                    size: true,
+                    createdAt: true,
+                },
+            },
+            comments: {
+                select: {
+                    id: true,
+                    text: true,
+                    createdAt: true,
+                    author: {
+                        select: {
+                            id: true,
+                            username: true,
+                            email: true,
+                            avatarUrl: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: "desc" },
+            },
+            subtasks: {
+                select: {
+                    id: true,
+                    title: true,
+                    status: true,
+                    completed: true,
+                    createdAt: true,
+                    assignedTo: {
+                        select: {
+                            id: true,
+                            username: true,
+                            avatarUrl: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: "asc" },
             },
             dependencies: {
-                include: {
+                select: {
+                    id: true,
+                    dependsOnTaskId: true,
                     dependsOnTask: {
                         select: {
                             id: true,
@@ -387,29 +454,17 @@ export async function getTask(id: number) {
                                     id: true,
                                     username: true,
                                     avatarUrl: true,
-                                    team: {
-                                        select: {
-                                            id: true,
-                                            name: true
-                                        }
-                                    }
-                                }
+                                },
                             },
-                            team: {
-                                select: {
-                                    id: true,
-                                    name: true
-                                }
-                            }
-                        }
-                    }
+                        },
+                    },
                 },
-                orderBy: {
-                    createdAt: "desc"
-                }
+                orderBy: { createdAt: "desc" },
             },
             dependents: {
-                include: {
+                select: {
+                    id: true,
+                    taskId: true,
                     task: {
                         select: {
                             id: true,
@@ -420,25 +475,21 @@ export async function getTask(id: number) {
                                     id: true,
                                     username: true,
                                     avatarUrl: true,
-                                    team: {
-                                        select: {
-                                            id: true,
-                                            name: true
-                                        }
-                                    }
-                                }
+                                },
                             },
-                            team: {
-                                select: {
-                                    id: true,
-                                    name: true
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                        },
+                    },
+                },
+            },
+            _count: {
+                select: {
+                    subtasks: true,
+                    dependencies: true,
+                    dependents: true,
+                    comments: true,
+                },
+            },
+        },
     })
 
     return task
@@ -780,7 +831,29 @@ export async function updateTaskStatus(taskId: number, status: string | number, 
     try {
         const task = await prisma.task.findUnique({
             where: { id: taskId },
-            include: { assignees: true, taskStatus: true }
+            select: {
+                id: true,
+                title: true,
+                createdById: true,
+                completedAt: true,
+                startedAt: true,
+                taskStatusId: true,
+                assignees: {
+                    select: {
+                        id: true,
+                        username: true,
+                    },
+                },
+                taskStatus: {
+                    select: {
+                        id: true,
+                        name: true,
+                        isActive: true,
+                        isFinal: true,
+                        isBlocking: true,
+                    },
+                },
+            },
         })
 
         if (!task) {
