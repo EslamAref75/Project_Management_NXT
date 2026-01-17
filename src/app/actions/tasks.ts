@@ -7,7 +7,7 @@ import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { createProjectNotification } from "./project-notifications"
 import { logActivity } from "@/lib/activity-logger"
-import { hasPermissionOrRole } from "@/lib/rbac"
+import { hasPermissionWithoutRoleBypass, handleAuthorizationError } from "@/lib/rbac-helpers"
 import { PERMISSIONS } from "@/lib/permissions"
 import { isTaskBlocked } from "./dependencies"
 
@@ -256,11 +256,10 @@ export async function createTask(formData: FormData) {
     const projectId = formData.get("projectId")
     const projectIdNum = projectId ? parseInt(projectId as string) : undefined
 
-    // Check permission using RBAC with legacy role fallback
-    const hasPermission = await hasPermissionOrRole(
+    // Check permission using RBAC (no role-based bypass)
+    const hasPermission = await hasPermissionWithoutRoleBypass(
         parseInt(session.user.id),
         PERMISSIONS.TASK.CREATE,
-        ["admin", "project_manager", "team_lead"],
         projectIdNum // projectId for project-scoped permissions
     )
 
@@ -537,11 +536,10 @@ export async function updateTask(taskId: number, formData: FormData) {
         return { error: "Task not found" }
     }
 
-    // Check permission using RBAC with legacy role fallback
-    const hasPermission = await hasPermissionOrRole(
+    // Check permission using RBAC (no role-based bypass)
+    const hasPermission = await hasPermissionWithoutRoleBypass(
         parseInt(session.user.id),
         PERMISSIONS.TASK.UPDATE,
-        ["admin", "project_manager", "team_lead"],
         existingTask.projectId // projectId for project-scoped permissions
     )
 
@@ -563,10 +561,9 @@ export async function updateTask(taskId: number, formData: FormData) {
 
     // Check specific permissions for priority and status changes
     if (priority) {
-        const hasPriorityPermission = await hasPermissionOrRole(
+        const hasPriorityPermission = await hasPermissionWithoutRoleBypass(
             parseInt(session.user.id),
             PERMISSIONS.TASK.CHANGE_PRIORITY,
-            ["admin", "project_manager", "team_lead"],
             existingTask.projectId
         )
         if (!hasPriorityPermission && !isCreator) {
@@ -575,10 +572,9 @@ export async function updateTask(taskId: number, formData: FormData) {
     }
 
     if (status) {
-        const hasStatusPermission = await hasPermissionOrRole(
+        const hasStatusPermission = await hasPermissionWithoutRoleBypass(
             parseInt(session.user.id),
             PERMISSIONS.TASK.CHANGE_STATUS,
-            ["admin", "project_manager", "team_lead"],
             existingTask.projectId
         )
         if (!hasStatusPermission && !isCreator && !isAssignee) {
@@ -642,11 +638,10 @@ export async function updateTask(taskId: number, formData: FormData) {
         }
 
         if (validated.data.assigneeIds !== undefined) {
-            // Check permission for task assignment
-            const hasAssignPermission = await hasPermissionOrRole(
+            // Check permission for task assignment (no role-based bypass)
+            const hasAssignPermission = await hasPermissionWithoutRoleBypass(
                 parseInt(session.user.id),
                 PERMISSIONS.TASK.ASSIGN,
-                ["admin", "project_manager", "team_lead"],
                 existingTask.projectId
             )
 
@@ -747,11 +742,10 @@ export async function updateTaskStatus(taskId: number, status: string | number, 
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    // Check permission using RBAC with legacy role fallback
-    const hasPermission = await hasPermissionOrRole(
+    // Check permission using RBAC (no role-based bypass)
+    const hasPermission = await hasPermissionWithoutRoleBypass(
         parseInt(session.user.id),
         PERMISSIONS.TASK.CHANGE_STATUS,
-        ["admin", "project_manager", "team_lead"],
         projectId // projectId for project-scoped permissions
     )
 
@@ -901,11 +895,10 @@ export async function deleteTask(taskId: number) {
         return { error: "Task not found" }
     }
 
-    // Check permission using RBAC with legacy role fallback
-    const hasPermission = await hasPermissionOrRole(
+    // Check permission using RBAC (no role-based bypass)
+    const hasPermission = await hasPermissionWithoutRoleBypass(
         parseInt(session.user.id),
         PERMISSIONS.TASK.DELETE,
-        ["admin", "project_manager", "team_lead"],
         task.projectId // projectId for project-scoped permissions
     )
 

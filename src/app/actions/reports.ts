@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
+import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
 
 // Helper to get projects (for filters)
 export async function getProjects() {
@@ -71,8 +72,13 @@ export async function getOverviewReports(params: {
             prisma.project.count({ where: { ...where, status: "on_hold" } }),
         ])
 
-        // Tasks stats
-        const projectIds = session.user.role === "admin"
+        // Tasks stats - Use RBAC to determine if user can see all projects
+        const canViewAllProjects = await hasPermissionWithoutRoleBypass(
+            parseInt(session.user.id),
+            "project.viewAll"
+        )
+        
+        const projectIds = canViewAllProjects
             ? undefined
             : await prisma.project.findMany({
                   where: {

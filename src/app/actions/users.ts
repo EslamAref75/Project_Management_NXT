@@ -6,6 +6,11 @@ import { authOptions } from "@/lib/auth"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
+import {
+  requirePermission,
+  handleAuthorizationError,
+  ForbiddenError,
+} from "@/lib/rbac-helpers"
 
 
 const createUserSchema = z.object({
@@ -50,101 +55,137 @@ export async function getUser(id: number) {
 }
 
 export async function createUser(formData: FormData) {
-    const session = await getServerSession(authOptions)
-    // Check for admin permissions (using legacy check for now, ideally should use RBAC)
-    // TODO: Update this to check for correct permissions
-    if (!session || (session.user.role !== "admin" && session.user.role !== "System Admin")) return { error: "Unauthorized" }
+  const session = await getServerSession(authOptions)
+  if (!session) return { error: "Unauthorized", code: "UNAUTHORIZED" }
 
-    const username = formData.get("username")
-    const email = formData.get("email")
-    const password = formData.get("password")
-    const roleName = formData.get("role")
-    const teamId = formData.get("teamId")
+  try {
+    // Use RBAC permission check (not role-based bypass)
+    await requirePermission(parseInt(session.user.id), "user.create")
+  } catch (error: any) {
+    return handleAuthorizationError(error)
+  }
 
-    const validated = createUserSchema.safeParse({
-        username,
-        email,
-        password,
-        role: roleName,
-        teamId: teamId ? parseInt(teamId as string) : undefined
+  const username = formData.get("username")
+  const email = formData.get("email")
+  const password = formData.get("password")
+  const roleName = formData.get("role")
+  const teamId = formData.get("teamId")
+
+  const validated = createUserSchema.safeParse({
+    username,
+    email,
+    password,
+    role: roleName,
+    teamId: teamId ? parseInt(teamId as string) : undefined,
+  })
+
+  if (!validated.success) {
+    return { error: "Validation failed", code: "VALIDATION_FAILED" }
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(validated.data.password, 10)
+
+    // 1. Check if the role exists in the roles table
+    const rbacRole = await prisma.role.findUnique({
+      where: { name: validated.data.role },
     })
 
-    if (!validated.success) {
-        return { error: "Validation failed" }
+    // 2. Create the user
+    const newUser = await prisma.user.create({
+      data: {
+        username: validated.data.username,
+        email: validated.data.email,
+        role: validated.data.role, // Keep legacy field in sync for now
+        passwordHash: hashedPassword,
+        teamId: validated.data.teamId,
+      },
+    })
+
+    // 3. If RBAC role exists, assign it to the user
+    if (rbacRole) {
+      await prisma.userRole.create({
+        data: {
+          userId: newUser.id,
+          roleId: rbacRole.id,
+          scopeType: "global", // Defaulting to global scope for dashboard creation
+          scopeId: 0,
+        },
+      })
     }
 
-    try {
-        const hashedPassword = await bcrypt.hash(validated.data.password, 10)
+    // Log activity
+    console.log(
+      `[RBAC] User ${session.user.username} created user ${newUser.username}`
+    )
 
-        // 1. Check if the role exists in the roles table
-        const rbacRole = await prisma.role.findUnique({
-            where: { name: validated.data.role }
-        })
-
-        // 2. Create the user
-        const newUser = await prisma.user.create({
-            data: {
-                username: validated.data.username,
-                email: validated.data.email,
-                role: validated.data.role, // Keep legacy field in sync for now
-                passwordHash: hashedPassword,
-                teamId: validated.data.teamId
-            }
-        })
-
-        // 3. If RBAC role exists, assign it to the user
-        if (rbacRole) {
-            await prisma.userRole.create({
-                data: {
-                    userId: newUser.id,
-                    roleId: rbacRole.id,
-                    scopeType: "global", // Defaulting to global scope for dashboard creation
-                    scopeId: 0
-                }
-            })
-        }
-
-        revalidatePath("/dashboard/users")
-        revalidatePath("/dashboard/teams")
-        return { success: true }
-    } catch (e) {
-        console.error("Create User Error:", e)
-        return { error: "Failed to create user (Email/Username might be taken)" }
+    revalidatePath("/dashboard/users")
+    revalidatePath("/dashboard/teams")
+    return { success: true, code: "USER_CREATED" }
+  } catch (e) {
+    console.error("Create User Error:", e)
+    return {
+      error: "Failed to create user (Email/Username might be taken)",
+      code: "CREATE_FAILED",
     }
+  }
 }
+
 
 export async function updateUser(id: number, formData: FormData) {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+  const session = await getServerSession(authOptions)
+  if (!session) return { error: "Unauthorized", code: "UNAUTHORIZED" }
 
-    // Logic to update user (excluding password for now unless requested)
-    const role = formData.get("role") as string
-    const teamId = formData.get("teamId") ? parseInt(formData.get("teamId") as string) : null
+  try {
+    // Check permission to update users (RBAC, not role)
+    await requirePermission(parseInt(session.user.id), "user.update")
+  } catch (error: any) {
+    return handleAuthorizationError(error)
+  }
 
-    try {
-        await prisma.user.update({
-            where: { id },
-            data: { role, teamId }
-        })
-        revalidatePath("/dashboard/users")
-        return { success: true }
-    } catch (e) {
-        return { error: "Failed to update user" }
-    }
+  // Logic to update user (excluding password for now unless requested)
+  const role = formData.get("role") as string
+  const teamId = formData.get("teamId") ? parseInt(formData.get("teamId") as string) : null
+
+  try {
+    await prisma.user.update({
+      where: { id },
+      data: { role, teamId },
+    })
+
+    console.log(`[RBAC] User ${session.user.username} updated user ${id}`)
+
+    revalidatePath("/dashboard/users")
+    return { success: true, code: "USER_UPDATED" }
+  } catch (e) {
+    return { error: "Failed to update user", code: "UPDATE_FAILED" }
+  }
 }
+
 
 export async function deleteUser(id: number) {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+  const session = await getServerSession(authOptions)
+  if (!session) return { error: "Unauthorized", code: "UNAUTHORIZED" }
 
-    try {
-        await prisma.user.delete({ where: { id } })
-        revalidatePath("/dashboard/users")
-        return { success: true }
-    } catch (e) {
-        return { error: "Failed to delete user" }
-    }
+  try {
+    // Check permission to delete users (RBAC, not role)
+    await requirePermission(parseInt(session.user.id), "user.delete")
+  } catch (error: any) {
+    return handleAuthorizationError(error)
+  }
+
+  try {
+    await prisma.user.delete({ where: { id } })
+
+    console.log(`[RBAC] User ${session.user.username} deleted user ${id}`)
+
+    revalidatePath("/dashboard/users")
+    return { success: true, code: "USER_DELETED" }
+  } catch (e) {
+    return { error: "Failed to delete user", code: "DELETE_FAILED" }
+  }
 }
+
 
 export async function updateUserTeam(userId: number, teamId: number | null) {
     const session = await getServerSession(authOptions)

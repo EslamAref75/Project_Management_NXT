@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/activity-logger"
-import { hasPermissionOrRole } from "@/lib/rbac"
+import { hasPermissionWithoutRoleBypass, handleAuthorizationError } from "@/lib/rbac-helpers"
 import { PERMISSIONS } from "@/lib/permissions"
 
 const projectSchema = z.object({
@@ -144,27 +144,26 @@ export async function getProjectsWithFilters(params: {
             where.projectManagerId = parseInt(projectManager)
         }
 
-        // Role-based filtering
-        const isSystemAdmin = session.user.role === "admin" || session.user.role === "System Admin"
-        const isProjectManager = session.user.role === "project_manager" || session.user.role === "Project Manager"
+        // Role-based filtering - Use RBAC instead of hardcoded roles
+        const canViewAllProjects = await hasPermissionWithoutRoleBypass(
+            parseInt(session.user.id),
+            "project.viewAll"
+        )
 
-        // If not System Admin or Project Manager, restrict visibility
-        if (!isSystemAdmin && !isProjectManager) {
-            // For other roles (devs, team leads etc), show only projects they're assigned to
-            // TODO: Enhance this with proper granular permissions later (e.g. Team Lead might see team projects)
+        // If user doesn't have project.viewAll permission, restrict visibility
+        if (!canViewAllProjects) {
+            // For users without viewAll permission, show only projects they're assigned to
             const userConditions = [
                 { projectManagerId: parseInt(session.user.id) },
                 { createdById: parseInt(session.user.id) },
-                // Also include projects where they are a member (via ProjectUser table) if applicable
-                // For now keeping simple legacy behavior for non-PMs
             ]
 
             if (where.OR) {
                 where.AND = [
                     ...(where.AND || []),
-                    { OR: [...where.OR, ...userConditions] } // Combine existing OR with user restriction
+                    { OR: [...where.OR, ...userConditions] }
                 ]
-                delete where.OR // Move existing OR inside the AND
+                delete where.OR
             } else {
                 where.OR = userConditions
             }
@@ -214,11 +213,10 @@ export async function createProject(formData: FormData) {
     const session = await getServerSession(authOptions)
     if (!session) return { error: "Unauthorized" }
 
-    // Check permission using RBAC with legacy role fallback
-    const hasPermission = await hasPermissionOrRole(
+    // Check permission using RBAC (no role-based bypass)
+    const hasPermission = await hasPermissionWithoutRoleBypass(
         parseInt(session.user.id),
-        PERMISSIONS.PROJECT.CREATE,
-        ["admin", "project_manager"]
+        PERMISSIONS.PROJECT.CREATE
     )
 
     if (!hasPermission) {
@@ -403,11 +401,10 @@ export async function updateProject(id: number, formData: FormData) {
         return { error: "Project not found" }
     }
 
-    // Check permission using RBAC with legacy role fallback
-    const hasPermission = await hasPermissionOrRole(
+    // Check permission using RBAC (no role-based bypass)
+    const hasPermission = await hasPermissionWithoutRoleBypass(
         parseInt(session.user.id),
         PERMISSIONS.PROJECT.UPDATE,
-        ["admin", "project_manager"],
         id // projectId for project-scoped permissions
     )
 
@@ -519,11 +516,10 @@ export async function deleteProject(id: number) {
         return { error: "Project not found" }
     }
 
-    // Check permission using RBAC with legacy role fallback
-    const hasPermission = await hasPermissionOrRole(
+    // Check permission using RBAC (no role-based bypass)
+    const hasPermission = await hasPermissionWithoutRoleBypass(
         parseInt(session.user.id),
         PERMISSIONS.PROJECT.DELETE,
-        ["admin", "project_manager"],
         id // projectId for project-scoped permissions
     )
 

@@ -6,15 +6,14 @@ import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logActivity } from "@/lib/activity-logger"
-import { hasPermissionOrRole } from "@/lib/rbac"
+import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
 import { PERMISSIONS } from "@/lib/permissions"
 
-// Helper function to check task status management permission
+// Helper function to check task status management permission (no role-based bypass)
 async function checkTaskStatusPermission(userId: number): Promise<boolean> {
-    return hasPermissionOrRole(
+    return hasPermissionWithoutRoleBypass(
         userId,
-        PERMISSIONS.SETTINGS.TASK_STATUS_MANAGE,
-        ["admin", "project_manager"]
+        PERMISSIONS.SETTINGS.TASK_STATUS_MANAGE
     )
 }
 

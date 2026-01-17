@@ -4,20 +4,21 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
 
 // Check if user can manage settings (self or admin)
 async function checkUserSettingsAccess(targetUserId: number) {
     const session = await getServerSession(authOptions)
-    if (!session) return { authorized: false, session: null, isAdmin: false }
+    if (!session) return { authorized: false, session: null, hasAdminPermission: false }
 
     const userId = parseInt(session.user.id)
-    const isAdmin = session.user.role === "admin"
+    const hasAdminPermission = await hasPermissionWithoutRoleBypass(userId, "admin.access")
     const isSelf = userId === targetUserId
 
     // User can edit their own settings, admin can edit any user's settings
-    const authorized = isSelf || isAdmin
+    const authorized = isSelf || hasAdminPermission
 
-    return { authorized, session, isAdmin, isSelf }
+    return { authorized, session, hasAdminPermission, isSelf }
 }
 
 // Get all user settings
@@ -266,7 +267,7 @@ export async function updateUserSetting(
     value: any,
     reason?: string
 ) {
-    const { authorized, session, isAdmin } = await checkUserSettingsAccess(userId)
+    const { authorized, session, hasAdminPermission } = await checkUserSettingsAccess(userId)
     if (!authorized || !session) {
         return { error: "Unauthorized" }
     }

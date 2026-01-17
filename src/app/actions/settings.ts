@@ -6,13 +6,17 @@ import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { unstable_noStore as noStore } from "next/cache"
 import bcrypt from "bcryptjs"
+import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
 
 // Check if user is system administrator
 async function checkAdmin() {
     const session = await getServerSession(authOptions)
     if (!session) return { authorized: false, session: null }
 
-    const isAuthorized = session.user.role === "admin"
+    const isAuthorized = await hasPermissionWithoutRoleBypass(
+        parseInt(session.user.id),
+        "admin.access"
+    )
     return { authorized: isAuthorized, session }
 }
 

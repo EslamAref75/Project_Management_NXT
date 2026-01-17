@@ -6,6 +6,11 @@ import { authOptions } from "@/lib/auth"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/activity-logger"
+import {
+    requirePermission,
+    handleAuthorizationError,
+    ForbiddenError,
+} from "@/lib/rbac-helpers"
 
 const teamSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -123,7 +128,13 @@ export async function getTeamProjects(teamId: number) {
 
 export async function createTeam(formData: FormData) {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+    if (!session) return { error: "Unauthorized" }
+
+    try {
+        await requirePermission(parseInt(session.user.id), "team.create")
+    } catch (error: any) {
+        return handleAuthorizationError(error)
+    }
 
     const name = formData.get("name") as string
     const description = formData.get("description") as string
@@ -201,7 +212,13 @@ export async function createTeam(formData: FormData) {
 
 export async function updateTeam(id: number, formData: FormData) {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+    if (!session) return { error: "Unauthorized" }
+
+    try {
+        await requirePermission(parseInt(session.user.id), "team.update")
+    } catch (error: any) {
+        return handleAuthorizationError(error)
+    }
 
     const name = formData.get("name") as string
     const description = formData.get("description") as string
@@ -255,7 +272,13 @@ export async function updateTeam(id: number, formData: FormData) {
 
 export async function deleteTeam(id: number) {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+    if (!session) return { error: "Unauthorized" }
+
+    try {
+        await requirePermission(parseInt(session.user.id), "team.delete")
+    } catch (error: any) {
+        return handleAuthorizationError(error)
+    }
 
     try {
         const team = await prisma.team.findUnique({
@@ -292,7 +315,13 @@ export async function deleteTeam(id: number) {
 
 export async function addProjectToTeam(teamId: number, projectId: number) {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+    if (!session) return { error: "Unauthorized" }
+
+    try {
+        await requirePermission(parseInt(session.user.id), "team.addProject")
+    } catch (error: any) {
+        return handleAuthorizationError(error)
+    }
 
     try {
         // Check if team is active
@@ -344,7 +373,13 @@ export async function addProjectToTeam(teamId: number, projectId: number) {
 
 export async function removeProjectFromTeam(teamId: number, projectId: number) {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+    if (!session) return { error: "Unauthorized" }
+
+    try {
+        await requirePermission(parseInt(session.user.id), "team.removeProject")
+    } catch (error: any) {
+        return handleAuthorizationError(error)
+    }
 
     try {
         const team = await prisma.team.findUnique({
@@ -388,7 +423,13 @@ export async function removeProjectFromTeam(teamId: number, projectId: number) {
 
 export async function addMemberToTeam(teamId: number, userId: number, role: string = "member") {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+    if (!session) return { error: "Unauthorized" }
+
+    try {
+        await requirePermission(parseInt(session.user.id), "team.addMember")
+    } catch (error: any) {
+        return handleAuthorizationError(error)
+    }
 
     try {
         await prisma.teamMember.create({
@@ -412,7 +453,13 @@ export async function addMemberToTeam(teamId: number, userId: number, role: stri
 
 export async function removeMemberFromTeam(teamId: number, userId: number) {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") return { error: "Unauthorized" }
+    if (!session) return { error: "Unauthorized" }
+
+    try {
+        await requirePermission(parseInt(session.user.id), "team.removeMember")
+    } catch (error: any) {
+        return handleAuthorizationError(error)
+    }
 
     try {
         await prisma.teamMember.delete({

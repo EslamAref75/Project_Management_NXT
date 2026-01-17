@@ -4,14 +4,15 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
 
 // Check if user can manage project settings
 async function checkProjectSettingsAccess(projectId: number) {
     const session = await getServerSession(authOptions)
-    if (!session) return { authorized: false, session: null, isAdmin: false }
+    if (!session) return { authorized: false, session: null, hasAdminPermission: false }
 
     const userId = parseInt(session.user.id)
-    const isAdmin = session.user.role === "admin"
+    const hasAdminPermission = await hasPermissionWithoutRoleBypass(userId, "admin.access")
 
     // Check if user is project manager
     const project = await prisma.project.findUnique({
@@ -24,14 +25,14 @@ async function checkProjectSettingsAccess(projectId: number) {
     })
 
     if (!project) {
-        return { authorized: false, session: null, isAdmin: false, error: "Project not found" }
+        return { authorized: false, session: null, hasAdminPermission: false, error: "Project not found" }
     }
 
     const isProjectManager = project.projectManagerId === userId || project.createdById === userId
 
-    const authorized = isAdmin || isProjectManager
+    const authorized = hasAdminPermission || isProjectManager
 
-    return { authorized, session, isAdmin, isProjectManager }
+    return { authorized, session, hasAdminPermission, isProjectManager }
 }
 
 // Get all project settings with override resolution
@@ -194,7 +195,7 @@ export async function updateProjectSetting(
     enabled: boolean = true,
     reason?: string
 ) {
-    const { authorized, session, isAdmin } = await checkProjectSettingsAccess(projectId)
+    const { authorized, session, hasAdminPermission } = await checkProjectSettingsAccess(projectId)
     if (!authorized || !session) {
         return { error: "Unauthorized" }
     }

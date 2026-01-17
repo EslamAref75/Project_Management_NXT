@@ -6,14 +6,18 @@ import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { startOfDay, endOfDay } from "date-fns"
 import { createProjectNotification } from "./project-notifications"
+import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
 
-// Check if user is admin or project manager
+// Check if user has assignment privileges
 async function checkAdminOrManager() {
     const session = await getServerSession(authOptions)
     if (!session) return { authorized: false, session: null }
     
-    const isAuthorized = session.user.role === "admin" || session.user.role === "team_lead"
-    return { authorized: isAuthorized, session }
+    const hasPermission = await hasPermissionWithoutRoleBypass(
+        parseInt(session.user.id),
+        "task.assign"
+    )
+    return { authorized: hasPermission, session }
 }
 
 // Get all users with their project counts for the assignment panel

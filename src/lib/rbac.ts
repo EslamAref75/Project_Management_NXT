@@ -71,20 +71,24 @@ export async function getUserPermissions(
 
 /**
  * Check if user has a specific permission
- * Supports both legacy role field and RBAC system
+ * ⚠️ DEPRECATED - This function has role-based bypasses
+ * Use hasPermissionWithoutRoleBypass() from rbac-helpers.ts instead
+ * 
+ * @deprecated - Use hasPermissionWithoutRoleBypass() for new code
  */
 export async function hasPermission(
   userId: number,
   permission: string,
   projectId?: number
 ): Promise<boolean> {
-  // Check legacy role field first (for backward compatibility)
+  // Legacy implementation with bypasses - kept for backward compatibility only
+  // DO NOT USE IN NEW CODE - this bypasses RBAC
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { role: true },
   })
 
-  // Legacy admin and project_manager roles have all permissions
+  // ⚠️ LEGACY BYPASS - Should not exist in new code
   if (user?.role === "admin" || user?.role === "project_manager") {
     return true
   }

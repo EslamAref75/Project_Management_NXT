@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { startOfDay, endOfDay } from "date-fns"
+import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
 
 export type ProjectStats = {
     totalTasks: number
@@ -135,13 +136,16 @@ export async function getAllProjectsStats(): Promise<{ success: boolean; data?: 
     if (!session) return { success: false, error: "Unauthorized" }
 
     const userId = parseInt(session.user.id)
-    const isAdmin = session.user.role === "admin"
+    const canViewAllProjects = await hasPermissionWithoutRoleBypass(
+        userId,
+        "project.viewAll"
+    )
 
     try {
         const where: any = {}
 
-        // Permission Scope
-        if (!isAdmin) {
+        // Permission Scope - Use RBAC instead of role check
+        if (!canViewAllProjects) {
             where.OR = [
                 { projectManagerId: userId },
                 { createdById: userId },
