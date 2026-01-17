@@ -29,11 +29,35 @@ export async function getProjects() {
     // For now, fetch all projects. Later we can filter by user/team.
     const projects = await prisma.project.findMany({
         orderBy: { createdAt: "desc" },
-        include: {
-            tasks: {
-                select: { id: true, status: true }
-            }
-        }
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            status: true,
+            type: true,
+            projectStatusId: true,
+            projectTypeId: true,
+            projectManagerId: true,
+            startDate: true,
+            endDate: true,
+            createdAt: true,
+            createdById: true,
+            projectManager: {
+                select: {
+                    id: true,
+                    username: true,
+                    email: true,
+                    avatarUrl: true,
+                },
+            },
+            _count: {
+                select: {
+                    tasks: true,
+                    members: true,
+                    notifications: true,
+                },
+            },
+        },
     })
 
     return projects
@@ -177,16 +201,32 @@ export async function getProjectsWithFilters(params: {
                 skip,
                 take: limit,
                 orderBy: { createdAt: "desc" },
-                include: {
-                    tasks: {
-                        select: { id: true, status: true },
-                    },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    status: true,
+                    type: true,
+                    projectStatusId: true,
+                    projectTypeId: true,
+                    projectManagerId: true,
+                    startDate: true,
+                    endDate: true,
+                    createdAt: true,
+                    createdById: true,
                     projectManager: {
                         select: {
                             id: true,
                             username: true,
                             email: true,
                             avatarUrl: true,
+                        },
+                    },
+                    _count: {
+                        select: {
+                            tasks: true,
+                            members: true,
+                            notifications: true,
                         },
                     },
                 },

@@ -53,17 +53,24 @@ export async function getDashboardSummary() {
             ]
         }
 
-        // Count projects by status
+        // Count projects by status - OPTIMIZED: Use aggregation instead of N+1 queries
         const projectStatusCounts: Record<number, number> = {}
         if (projectStatuses.length > 0) {
-            for (const status of projectStatuses) {
-                const count = await prisma.project.count({
-                    where: {
-                        ...projectsWhere,
-                        projectStatusId: status.id
-                    }
-                })
-                projectStatusCounts[status.id] = count
+            const projectCounts = await prisma.project.groupBy({
+                by: ['projectStatusId'],
+                where: {
+                    ...projectsWhere,
+                    projectStatusId: { in: projectStatuses.map(s => s.id) }
+                },
+                _count: {
+                    id: true
+                }
+            })
+            
+            for (const result of projectCounts) {
+                if (result.projectStatusId) {
+                    projectStatusCounts[result.projectStatusId] = result._count.id
+                }
             }
         }
 
@@ -83,8 +90,7 @@ export async function getDashboardSummary() {
             }
         })
 
-        // Count tasks by status
-        const taskStatusCounts: Record<number, number> = {}
+        // Count tasks by status - OPTIMIZED: Use aggregation instead of N+1 queries
         const tasksWhere = isAdmin ? {} : {
             project: {
                 OR: [
@@ -94,16 +100,24 @@ export async function getDashboardSummary() {
                 ]
             }
         }
-
+        
+        const taskStatusCounts: Record<number, number> = {}
         if (taskStatuses.length > 0) {
-            for (const status of taskStatuses) {
-                const count = await prisma.task.count({
-                    where: {
-                        ...tasksWhere,
-                        taskStatusId: status.id
-                    }
-                })
-                taskStatusCounts[status.id] = count
+            const taskCounts = await prisma.task.groupBy({
+                by: ['taskStatusId'],
+                where: {
+                    ...tasksWhere,
+                    taskStatusId: { in: taskStatuses.map(s => s.id) }
+                },
+                _count: {
+                    id: true
+                }
+            })
+            
+            for (const result of taskCounts) {
+                if (result.taskStatusId) {
+                    taskStatusCounts[result.taskStatusId] = result._count.id
+                }
             }
         }
 
@@ -246,7 +260,14 @@ export async function getDashboardSummary() {
                         }
                     ]
                 },
-                include: {
+                select: {
+                    id: true,
+                    actionType: true,
+                    actionSummary: true,
+                    actionDetails: true,
+                    createdAt: true,
+                    performedById: true,
+                    projectId: true,
                     performedBy: {
                         select: {
                             id: true,
