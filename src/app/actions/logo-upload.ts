@@ -4,51 +4,71 @@ import { writeFile, mkdir } from "fs/promises"
 import { join } from "path"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import {
+  validateFileUpload,
+  sanitizeFilename,
+  generateSafeFilename,
+  validateFileContent,
+  getReadableFileSize,
+} from "@/lib/file-upload-validator"
 
 export async function uploadSystemLogo(formData: FormData) {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") {
-        return { error: "Unauthorized" }
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== "admin") {
+    return { error: "Unauthorized - Admin access required", code: "UNAUTHORIZED" }
+  }
+
+  const file = formData.get("file") as File | null
+  if (!file) {
+    return { error: "No file provided", code: "MISSING_FILE" }
+  }
+
+  try {
+    // 1. VALIDATE FILE - Use centralized validator
+    const validation = validateFileUpload(file)
+    if (!validation.valid) {
+      return { error: validation.error || "Invalid file", code: "INVALID_FILE" }
     }
 
-    const file = formData.get("file") as File
-    if (!file) {
-        return { error: "No file provided" }
+    // 2. VALIDATE FILE CONTENT (Magic Bytes) - Prevent MIME type spoofing
+    const bytes = await file.arrayBuffer()
+    const contentValid = await validateFileContent(bytes, file.type)
+    if (!contentValid) {
+      return {
+        error: "File content does not match declared type. Possible spoofing attempt.",
+        code: "CONTENT_MISMATCH",
+      }
     }
 
-    // Validation
-    const validTypes = ["image/jpeg", "image/png", "image/svg+xml"]
-    if (!validTypes.includes(file.type)) {
-        return { error: "Invalid file type. Only JPG, PNG, and SVG are allowed." }
+    // 3. CREATE DIRECTORY IF IT DOESN'T EXIST
+    const uploadDir = join(process.cwd(), "public", "uploads", "branding")
+    await mkdir(uploadDir, { recursive: true })
+
+    // 4. GENERATE SAFE FILENAME
+    const safeFilename = generateSafeFilename(file.name, parseInt(session.user.id))
+    const filepath = join(uploadDir, safeFilename)
+
+    // 5. SAVE FILE TO DISK
+    const buffer = Buffer.from(bytes)
+    await writeFile(filepath, buffer)
+
+    // 6. LOG AND RETURN SUCCESS
+    console.log(
+      `[Logo Upload] Admin ${session.user.username} uploaded logo: ${safeFilename}`
+    )
+
+    return {
+      success: true,
+      url: `/uploads/branding/${safeFilename}`,
+      fileName: sanitizeFilename(file.name),
+      fileSize: getReadableFileSize(file.size),
+      code: "UPLOAD_SUCCESS",
     }
-
-    if (file.size > 2 * 1024 * 1024) { // 2MB
-        return { error: "File size exceeds 2MB limit." }
+  } catch (error: any) {
+    console.error("Logo upload error:", error)
+    return {
+      error: "Failed to upload logo",
+      code: "UPLOAD_FAILED",
+      details: error.message,
     }
-
-    try {
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-
-        // Create directory if it doesn't exist
-        const uploadDir = join(process.cwd(), "public", "uploads", "branding")
-        await mkdir(uploadDir, { recursive: true })
-
-        // Generate safe filename
-        const timestamp = Date.now()
-        // Simple sanitization: remove non-alphanumeric chars (except . and -)
-        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "")
-        const filename = `${timestamp}-${safeName}`
-        const filepath = join(uploadDir, filename)
-
-        await writeFile(filepath, buffer)
-
-        return {
-            success: true,
-            url: `/uploads/branding/${filename}`
-        }
-    } catch (error: any) {
-        console.error("Upload error:", error)
-        return { error: "Failed to upload file" }
-    }
-}
+  }
