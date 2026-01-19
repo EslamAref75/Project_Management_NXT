@@ -3,16 +3,16 @@
 import { prisma } from "@/lib/prisma"
 import { headers } from "next/headers"
 
-export type ActionCategory = 
-  | "auth" 
-  | "project" 
-  | "task" 
-  | "dependency" 
-  | "settings" 
-  | "notification" 
+export type ActionCategory =
+  | "auth"
+  | "project"
+  | "task"
+  | "dependency"
+  | "settings"
+  | "notification"
   | "today_task"
 
-export type ActionType = 
+export type ActionType =
   // Auth
   | "user_login"
   | "user_logout"
@@ -40,6 +40,7 @@ export type ActionType =
   | "project_assigned_to_team"
   | "project_removed_from_team"
   | "file_uploaded"
+  | "file_downloaded"
   | "file_deleted"
   // Team
   | "team_created"
@@ -111,11 +112,11 @@ interface LogActivityParams {
 export async function logActivity(params: LogActivityParams): Promise<void> {
   console.log("[ActivityLogger] ====== START LOGGING ======")
   console.log("[ActivityLogger] Received params:", JSON.stringify(params, null, 2))
-  
+
   try {
     // Sanitize actionDetails to remove sensitive information
     const sanitizedDetails = sanitizeActionDetails(params.actionDetails || {})
-    
+
     console.log("[ActivityLogger] Sanitized details:", JSON.stringify(sanitizedDetails, null, 2))
     console.log("[ActivityLogger] Logging activity:", {
       actionType: params.actionType,
@@ -123,7 +124,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
       actionSummary: params.actionSummary,
       performedById: params.performedById,
     })
-    
+
     // Try to create with new schema first
     try {
       const result = await prisma.activityLog.create({
@@ -131,8 +132,8 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
           actionType: params.actionType,
           actionCategory: params.actionCategory,
           actionSummary: params.actionSummary,
-          actionDetails: Object.keys(sanitizedDetails).length > 0 
-            ? JSON.stringify(sanitizedDetails) 
+          actionDetails: Object.keys(sanitizedDetails).length > 0
+            ? JSON.stringify(sanitizedDetails)
             : null,
           performedById: params.performedById,
           affectedUserId: params.affectedUserId || null,
@@ -161,7 +162,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
         await prisma.$executeRawUnsafe(`
           INSERT INTO activity_logs (action, description, entity_type, entity_id, ip_address, user_id, created_at)
           VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-        `, 
+        `,
           params.actionType,
           params.actionSummary,
           params.entityType || null,
@@ -230,7 +231,7 @@ async function getClientIP(): Promise<string | null> {
     const headersList = await headers()
     const forwarded = headersList.get('x-forwarded-for')
     const realIP = headersList.get('x-real-ip')
-    
+
     if (forwarded) {
       return forwarded.split(',')[0].trim()
     }

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -49,6 +49,10 @@ model User {
   assignedRoles                  UserRole[]                      @relation("RoleAssigner")
   urgentAcknowledgements         UrgentProjectAcknowledgement[]  @relation("UrgentAcknowledgements")
 
+  @@index([role]) // For filtering users by role in RBAC checks
+  @@index([isActive]) // For finding active users
+  @@index([teamId]) // For finding team members
+  @@index([createdAt]) // For sorting by creation date
   @@map("users")
 }
 
@@ -107,6 +111,13 @@ model Project {
   projectTeams            ProjectTeam[] // Many-to-many teams
   urgentAcknowledgments   UrgentProjectAcknowledgement[]
 
+  @@index([createdAt])  // For sorting by creation date
+  @@index([status])     // For filtering by legacy status
+  @@index([projectStatusId]) // For filtering by dynamic status
+  @@index([projectTypeId]) // For filtering by type
+  @@index([projectManagerId]) // For finding PM's projects
+  @@index([createdById]) // For finding user's created projects
+  @@index([priority]) // For filtering by priority
   @@map("projects")
 }
 
@@ -144,6 +155,15 @@ model Task {
   completedAt    DateTime?        @map("completed_at")
 
   @@index([taskStatusId])
+  @@index([projectId])  // For finding tasks by project
+  @@index([priority])   // For filtering by priority
+  @@index([status])     // For filtering by legacy status
+  @@index([dueDate])    // For date range queries
+  @@index([createdAt])  // For sorting by creation date
+  @@index([createdById]) // For finding user's created tasks
+  @@index([teamId])     // For finding team's tasks
+  @@index([projectId, taskStatusId]) // Composite for common filters
+  @@index([projectId, priority]) // Composite for priority filtering
   @@map("tasks")
 }
 
@@ -249,6 +269,8 @@ model TaskDependency {
   task            Task     @relation("Dependent", fields: [taskId], references: [id], onDelete: Cascade)
 
   @@id([taskId, dependsOnTaskId])
+  @@index([taskId]) // For finding task's dependencies
+  @@index([dependsOnTaskId]) // For finding dependent tasks
   @@map("task_dependencies")
 }
 
@@ -296,6 +318,10 @@ model Notification {
   userId    Int      @map("user_id")
   user      User     @relation(fields: [userId], references: [id])
 
+  @@index([userId]) // For fetching user's notifications
+  @@index([createdAt]) // For sorting by recency
+  @@index([isRead]) // For filtering unread notifications
+  @@index([userId, isRead]) // Composite for unread count
   @@map("notifications")
 }
 

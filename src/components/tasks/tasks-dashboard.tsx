@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useTransition } from "react"
+import { useState, useEffect, useCallback, useTransition, useRef, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { TasksSearchBar } from "./tasks-search-bar"
 import { TasksFilters } from "./tasks-filters"
@@ -50,13 +50,16 @@ export function TasksDashboard({
     // Forecasting
     const [forecasts, setForecasts] = useState<Record<number, any>>({})
 
-    // Fetch forecasts when tasks change
-    useEffect(() => {
-        if (tasks.length === 0) return;
+    // Fetch forecasts when tasks change - memoize to prevent redundant calls
+    const taskIdString = useMemo(() => {
+        if (tasks.length === 0) return ""
+        return tasks.map(t => t.id).sort().join(",")
+    }, [tasks])
 
-        // Only fetch if we don't have them (simple cache check, or just refetch)
+    useEffect(() => {
+        if (!taskIdString) return;
+
         const fetchForecasts = async () => {
-            // dynamic import to avoid server-action issues if mixed? No, importing directly is fine
             const { getForecastsForTasks } = await import("@/app/actions/forecasting");
             const ids = tasks.map(t => t.id);
             const result = await getForecastsForTasks(ids);
@@ -66,7 +69,7 @@ export function TasksDashboard({
         };
 
         fetchForecasts();
-    }, [tasks]);
+    }, [taskIdString, tasks]);
 
     // Filters state
     const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "")
@@ -139,7 +142,7 @@ export function TasksDashboard({
             dependencyState: dependencyState !== "all" ? dependencyState : undefined,
             startDate: dateRange.start?.toISOString(),
             endDate: dateRange.end?.toISOString(),
-            dateRange: (dateRange.start || dateRange.end) ? { from: dateRange.start || new Date(), to: dateRange.end || new Date() } : undefined, // For getTaskStats
+            dateRange: (dateRange.start && dateRange.end) ? { from: dateRange.start, to: dateRange.end } : undefined, // For getTaskStats
             dateFilterType,
             page,
             limit,
@@ -157,135 +160,94 @@ export function TasksDashboard({
         limit
     ])
 
-    // Fetch tasks
-    const fetchTasks = useCallback(async () => {
-        setLoading(true)
-        setError(null)
-        const params = getFilterParams()
 
-        try {
-            const result = await getTasksWithFilters({
-                search: params.search,
-                projectId: params.projectId,
-                status: params.status,
-                priority: params.priority,
-                assigneeId: params.assigneeId,
-                dependencyState: params.dependencyState,
-                startDate: params.startDate,
-                endDate: params.endDate,
-                dateFilterType: params.dateFilterType,
-                page: params.page,
-                limit: params.limit,
-            })
-
-            if (result.success) {
-                setTasks(result.tasks || [])
-                setTotal(result.total || 0)
-            } else {
-                setError(result.error || "Failed to load tasks")
-            }
-        } catch (err: any) {
-            setError(err.message || "An error occurred")
-        } finally {
-            setLoading(false)
-        }
-    }, [getFilterParams])
-
-    // Fetch stats
-    const fetchStats = useCallback(async () => {
-        setStatsLoading(true)
-        const params = getFilterParams()
-        // Improve dateRange handling for stats if needed. 
-        // getTaskStats expects { from, to } Date objects.
-        const dateRangeForStats = (dateRange.start || dateRange.end) ? {
-            from: dateRange.start || undefined,
-            to: dateRange.end || undefined
-        } : undefined
-
-        // Note: casting complex types if needed or ensuring getTaskStats accepts exactly what we pass
-        // Since we updated getTaskStats to accept arrays for projectId etc, it should be compatible.
-
-        try {
-            const result = await getTaskStats({
-                search: params.search,
-                projectId: params.projectId,
-                statusId: params.status, // We map 'status' from dashboard to 'statusId' in stats generic filters basically
-                priority: params.priority,
-                assigneeId: params.assigneeId,
-                // dependencyState not fully supported in stats yet? 
-                // getTaskStats doesn't strictly support dependencyState filter yet in my implementation, 
-                // but it mirrors most other filters. It will ignore dependencyState for now.
-                // dateRange logic:
-                dateRange: dateRangeForStats as any
-            })
-
-            if (result.success && result.data) {
-                setStats(result.data)
-            }
-        } catch (error) {
-            console.error("Error fetching stats:", error)
-        } finally {
-            setStatsLoading(false)
-        }
-    }, [getFilterParams, dateRange])
-
-
-    // Initial Load & Debounced search
+    // Handlers
+    // Debounce only search queries, other filters are immediate
     useEffect(() => {
-        const timer = setTimeout(() => {
-            // Only update URL if it's a search change debounced, 
-            // but here we trigger fetches.
-            if (page !== 1 && searchQuery !== (searchParams.get("search") || "")) {
-                setPage(1) // Reset page on search change
-            } else {
-                fetchTasks()
-                fetchStats()
-                updateURLParams()
+        const isSearchChange = searchQuery !== (searchParams.get("search") || "")
+        const debounceTime = isSearchChange && searchQuery !== "" ? 400 : 0
+
+        const timer = setTimeout(async () => {
+            // Fetch data in parallel
+            setLoading(true)
+            setStatsLoading(true)
+            try {
+                const [tasksResult, statsResult] = await Promise.all([
+                    getTasksWithFilters({
+                        search: searchQuery,
+                        projectId: projectFilter.length > 0 ? projectFilter : undefined,
+                        status: statusFilter.length > 0 ? statusFilter : undefined,
+                        priority: priorityFilter.length > 0 ? priorityFilter : undefined,
+                        assigneeId: assigneeFilter !== "all" ? assigneeFilter : undefined,
+                        dependencyState: dependencyState !== "all" ? dependencyState : undefined,
+                        startDate: dateRange.start?.toISOString(),
+                        endDate: dateRange.end?.toISOString(),
+                        dateFilterType,
+                        page,
+                        limit,
+                    }),
+                    getTaskStats({
+                        search: searchQuery,
+                        projectId: projectFilter.length > 0 ? projectFilter : undefined,
+                        statusId: statusFilter.length > 0 ? statusFilter : undefined,
+                        priority: priorityFilter.length > 0 ? priorityFilter : undefined,
+                        assigneeId: assigneeFilter !== "all" ? assigneeFilter : undefined,
+                        dateRange: (dateRange.start && dateRange.end) ? { from: dateRange.start, to: dateRange.end } : undefined
+                    })
+                ])
+
+                if (tasksResult.success) {
+                    setTasks(tasksResult.tasks || [])
+                    setTotal(tasksResult.total || 0)
+                } else {
+                    setError(tasksResult.error || "Failed to load tasks")
+                }
+
+                if (statsResult.success && statsResult.data) {
+                    setStats(statsResult.data)
+                }
+            } catch (err: any) {
+                setError(err.message || "An error occurred")
+            } finally {
+                setLoading(false)
+                setStatsLoading(false)
             }
-        }, 400)
+        }, debounceTime)
 
         return () => clearTimeout(timer)
-    }, [searchQuery, fetchTasks, fetchStats, updateURLParams]) // Dependencies cover most changes
+    }, [
+        searchQuery,
+        projectFilter,
+        statusFilter,
+        priorityFilter,
+        assigneeFilter,
+        dependencyState,
+        dateRange,
+        dateFilterType,
+        page,
+        limit
+    ])
 
-    // Fetch when other filters change (not search which is covered above or this effect covers all)
-    // Actually the above effect covers changes to searchQuery. 
-    // We need an effect that runs immediately for other filters.
-    // Simplifying: The generic dependency array [searchQuery, projectFilter, ...] is better.
-
-    // Let's use one main effect for all changes, with debounce logic for search only if possible.
-    // Or keep the separated approach from original code.
-
-    // Original code had:
-    // 1. Debounced search effect -> setPage(1), fetchTasks(), updateURLParams()
-    // 2. Filter change effect -> setPage(1), fetchTasks(), updateURLParams()
-    // 3. Page change effect -> fetchTasks(), updateURLParams()
-
-    // I should integrate fetchStats() into these.
-
-    // Effect for Search (Debounced)
+    // Separate effect for URL updates - debounced to prevent excessive history pushes
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (searchQuery !== (searchParams.get("search") || "")) {
-                setPage(1)
-            }
-            // We run fetches here only if it's the search changing, 
-            // but complicates things if we duplicate logic.
-            // Let's just hook into the existing effects structure.
-        }, 400)
-        return () => clearTimeout(timer)
-    }, [searchQuery])
+            const params = new URLSearchParams()
+            if (searchQuery) params.set("search", searchQuery)
+            if (projectFilter.length > 0) params.set("project", projectFilter.join(","))
+            if (statusFilter.length > 0) params.set("status", statusFilter.join(","))
+            if (priorityFilter.length > 0) params.set("priority", priorityFilter.join(","))
+            if (assigneeFilter !== "all") params.set("assignee", assigneeFilter)
+            if (dependencyState !== "all") params.set("dependencyState", dependencyState)
+            if (dateRange.start) params.set("startDate", dateRange.start.toISOString().split("T")[0])
+            if (dateRange.end) params.set("endDate", dateRange.end.toISOString().split("T")[0])
+            if (dateFilterType !== "dueDate") params.set("dateFilterType", dateFilterType)
+            if (viewMode !== "card") params.set("view", viewMode)
+            if (page > 1) params.set("page", page.toString())
 
-    // Main fetch effect
-    useEffect(() => {
-        // We need to debounce fetching if search changed, but immediate if filter changed.
-        // The original code was a bit racy or redundant. 
-        // Let's simplify:
-
-        const timer = setTimeout(() => {
-            fetchTasks()
-            fetchStats() // Added
-            updateURLParams()
-        }, searchQuery !== (searchParams.get("search") || "") ? 400 : 0) // Debounce only if search changed (rough heuristic) -- actually better to just rely on specific effects.
+            startTransition(() => {
+                router.push(`/dashboard/tasks?${params.toString()}`, { scroll: false })
+            })
+        }, 100) // Debounce URL updates by 100ms
 
         return () => clearTimeout(timer)
     }, [
@@ -298,7 +260,8 @@ export function TasksDashboard({
         dateRange,
         dateFilterType,
         viewMode,
-        page
+        page,
+        router
     ])
 
     // Handlers
@@ -340,7 +303,13 @@ export function TasksDashboard({
             value: stats.todayTasks,
             icon: <CalendarCheck />,
             color: "green",
-            // Could navigate to focus page or filter by date
+            onClick: () => {
+                const today = new Date()
+                const tomorrow = new Date(today)
+                tomorrow.setDate(tomorrow.getDate() + 1)
+                setDateRange({ start: today, end: tomorrow })
+                setDateFilterType("dueDate")
+            }
         },
         {
             label: "Blocked",
@@ -354,13 +323,24 @@ export function TasksDashboard({
             value: stats.overdueTasks,
             icon: <AlertCircle />,
             color: stats.overdueTasks > 0 ? "orange" : "default",
-            // Could filter by overdue
+            onClick: () => {
+                const today = new Date()
+                setDateRange({ start: undefined, end: today })
+                setDateFilterType("dueDate")
+            }
         },
         {
             label: "Completed Today",
             value: stats.completedToday,
             icon: <CheckCircle2 />,
             color: "default",
+            onClick: () => {
+                const today = new Date()
+                const tomorrow = new Date(today)
+                tomorrow.setDate(tomorrow.getDate() + 1)
+                setDateRange({ start: today, end: tomorrow })
+                setStatusFilter(["completed"])
+            }
         }
     ] : []
 
@@ -414,7 +394,7 @@ export function TasksDashboard({
                 onClear={handleClearFilters}
             />
 
-            {/* Error State */}
+            {/* Loading State */}
             {error && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -422,36 +402,50 @@ export function TasksDashboard({
                 </Alert>
             )}
 
-            {/* Loading State */}
-            {loading && (
-                <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            )}
+            {/* Content - Keep old data visible while loading with reduced opacity */}
+            <div className={loading && tasks.length > 0 ? "opacity-50 pointer-events-none transition-opacity" : "opacity-100 transition-opacity"}>
+                {tasks.length === 0 && !loading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <p className="text-muted-foreground">No tasks found. Try adjusting your filters.</p>
+                    </div>
+                ) : tasks.length > 0 ? (
+                    <>
+                        {viewMode === "card" ? (
+                            <TasksCardView
+                                tasks={tasks}
+                                total={total}
+                                page={page}
+                                limit={limit}
+                                onPageChange={setPage}
+                                forecasts={forecasts}
+                            />
+                        ) : (
+                            <TasksTableView
+                                tasks={tasks}
+                                total={total}
+                                page={page}
+                                limit={limit}
+                                onPageChange={setPage}
+                                forecasts={forecasts}
+                            />
+                        )}
+                    </>
+                ) : (
+                    /* Skeleton loading state - only shown on initial load when no tasks exist */
+                    <div className="space-y-4">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="h-24 bg-muted/50 rounded-lg animate-pulse" />
+                        ))}
+                    </div>
+                )}
+            </div>
 
-            {/* Content */}
-            {!loading && (
-                <>
-                    {viewMode === "card" ? (
-                        <TasksCardView
-                            tasks={tasks}
-                            total={total}
-                            page={page}
-                            limit={limit}
-                            onPageChange={setPage}
-                            forecasts={forecasts}
-                        />
-                    ) : (
-                        <TasksTableView
-                            tasks={tasks}
-                            total={total}
-                            page={page}
-                            limit={limit}
-                            onPageChange={setPage}
-                            forecasts={forecasts}
-                        />
-                    )}
-                </>
+            {/* Loading indicator overlay - non-blocking */}
+            {loading && tasks.length > 0 && (
+                <div className="fixed bottom-6 right-6 flex items-center gap-2 bg-background border border-border rounded-lg px-4 py-2 shadow-lg z-50">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Updating...</span>
+                </div>
             )}
         </div>
     )

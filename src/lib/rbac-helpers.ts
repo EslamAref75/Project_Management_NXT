@@ -297,17 +297,17 @@ export function invalidateAllPermissionCaches(): void {
  */
 export function handleAuthorizationError(
   error: unknown
-): { error: string; code: string; status: number } {
+): { error: string; code: string; status: number; success: false } {
   if (error instanceof UnauthorizedError) {
-    return { error: error.message, code: error.code, status: 403 }
+    return { error: error.message, code: error.code, status: 403, success: false }
   }
 
   if (error instanceof ForbiddenError) {
-    return { error: error.message, code: error.code, status: 403 }
+    return { error: error.message, code: error.code, status: 403, success: false }
   }
 
   if (error instanceof NotFoundError) {
-    return { error: error.message, code: error.code, status: 404 }
+    return { error: error.message, code: error.code, status: 404, success: false }
   }
 
   console.error("Unknown authorization error:", error)
@@ -315,5 +315,6 @@ export function handleAuthorizationError(
     error: "Authorization failed",
     code: "AUTHORIZATION_ERROR",
     status: 500,
+    success: false
   }
 }

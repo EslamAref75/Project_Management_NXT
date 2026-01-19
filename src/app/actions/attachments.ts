@@ -80,7 +80,6 @@ export async function uploadProjectFile(formData: FormData) {
         fileSize: file.size || null,
         taskId: taskId ? parseInt(taskId as string) : null,
         uploadedById: parseInt(session.user.id),
-        projectId: parseInt(projectId as string),
       },
     })
 
@@ -116,108 +115,108 @@ export async function uploadProjectFile(formData: FormData) {
 
 
 export async function getProjectAttachments(projectId: number) {
-    const session = await getServerSession(authOptions)
-    if (!session) return { error: "Unauthorized" }
+  const session = await getServerSession(authOptions)
+  if (!session) return { error: "Unauthorized" }
 
-    try {
-        // Get all attachments from tasks in this project
-        const tasks = await prisma.task.findMany({
-            where: { projectId },
-            select: { id: true },
-        })
+  try {
+    // Get all attachments from tasks in this project
+    const tasks = await prisma.task.findMany({
+      where: { projectId },
+      select: { id: true },
+    })
 
-        const taskIds = tasks.map((t) => t.id)
+    const taskIds = tasks.map((t) => t.id)
 
-        const attachments = await prisma.attachment.findMany({
-            where: {
-                OR: [
-                    { taskId: { in: taskIds } },
-                    { taskId: null }, // Project-level files (no taskId)
-                ],
-            },
-            include: {
-                uploader: {
-                    select: {
-                        id: true,
-                        username: true,
-                        avatarUrl: true,
-                    },
-                },
-                task: {
-                    select: {
-                        id: true,
-                        title: true,
-                    },
-                },
-            },
-            orderBy: { uploadedAt: "desc" },
-        })
+    const attachments = await prisma.attachment.findMany({
+      where: {
+        OR: [
+          { taskId: { in: taskIds } },
+          { taskId: null }, // Project-level files (no taskId)
+        ],
+      },
+      include: {
+        uploader: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          },
+        },
+        task: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+      orderBy: { uploadedAt: "desc" },
+    })
 
-        return { success: true, attachments }
-    } catch (error: any) {
-        console.error("Error fetching attachments:", error)
-        return { error: "Failed to fetch attachments", details: error.message }
-    }
+    return { success: true, attachments }
+  } catch (error: any) {
+    console.error("Error fetching attachments:", error)
+    return { error: "Failed to fetch attachments", details: error.message }
+  }
 }
 
 export async function deleteAttachment(attachmentId: number, projectId: number) {
-    const session = await getServerSession(authOptions)
-    if (!session) return { error: "Unauthorized" }
+  const session = await getServerSession(authOptions)
+  if (!session) return { error: "Unauthorized" }
 
-    try {
-        const attachment = await prisma.attachment.findUnique({
-            where: { id: attachmentId },
-        })
+  try {
+    const attachment = await prisma.attachment.findUnique({
+      where: { id: attachmentId },
+    })
 
-        if (!attachment) {
-            return { error: "Attachment not found" }
-        }
-
-        // Check permission - only uploader or admin can delete
-        if (
-            attachment.uploadedById !== parseInt(session.user.id) &&
-            session.user.role !== "admin"
-        ) {
-            return { error: "Unauthorized: You can only delete your own files" }
-        }
-
-        // Delete file from disk
-        try {
-            const filePath = join(process.cwd(), "public", attachment.fileUrl)
-            if (existsSync(filePath)) {
-                const { unlink } = await import("fs/promises")
-                await unlink(filePath)
-            }
-        } catch (fileError) {
-            console.error("Error deleting file from disk:", fileError)
-            // Continue with database deletion even if file deletion fails
-        }
-
-        // Delete database record
-        await prisma.attachment.delete({
-            where: { id: attachmentId },
-        })
-
-        // Log activity
-        await logActivity({
-            actionType: "file_deleted",
-            actionCategory: "project",
-            actionSummary: `File "${attachment.fileName}" deleted`,
-            actionDetails: {
-                fileName: attachment.fileName,
-                attachmentId: attachment.id,
-            },
-            performedById: parseInt(session.user.id),
-            projectId: projectId,
-            entityType: "attachment",
-            entityId: attachmentId,
-        })
-
-        revalidatePath(`/dashboard/projects/${projectId}`)
-        return { success: true }
-    } catch (error: any) {
-        console.error("Error deleting attachment:", error)
-        return { error: "Failed to delete attachment", details: error.message }
+    if (!attachment) {
+      return { error: "Attachment not found" }
     }
+
+    // Check permission - only uploader or admin can delete
+    if (
+      attachment.uploadedById !== parseInt(session.user.id) &&
+      session.user.role !== "admin"
+    ) {
+      return { error: "Unauthorized: You can only delete your own files" }
+    }
+
+    // Delete file from disk
+    try {
+      const filePath = join(process.cwd(), "public", attachment.fileUrl)
+      if (existsSync(filePath)) {
+        const { unlink } = await import("fs/promises")
+        await unlink(filePath)
+      }
+    } catch (fileError) {
+      console.error("Error deleting file from disk:", fileError)
+      // Continue with database deletion even if file deletion fails
+    }
+
+    // Delete database record
+    await prisma.attachment.delete({
+      where: { id: attachmentId },
+    })
+
+    // Log activity
+    await logActivity({
+      actionType: "file_deleted",
+      actionCategory: "project",
+      actionSummary: `File "${attachment.fileName}" deleted`,
+      actionDetails: {
+        fileName: attachment.fileName,
+        attachmentId: attachment.id,
+      },
+      performedById: parseInt(session.user.id),
+      projectId: projectId,
+      entityType: "attachment",
+      entityId: attachmentId,
+    })
+
+    revalidatePath(`/dashboard/projects/${projectId}`)
+    return { success: true }
+  } catch (error: any) {
+    console.error("Error deleting attachment:", error)
+    return { error: "Failed to delete attachment", details: error.message }
+  }
 }
 

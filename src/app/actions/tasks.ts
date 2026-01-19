@@ -401,16 +401,16 @@ export async function getTask(id: number) {
             attachments: {
                 select: {
                     id: true,
-                    filename: true,
-                    url: true,
-                    size: true,
-                    createdAt: true,
+                    fileName: true,
+                    fileUrl: true,
+                    fileSize: true,
+                    uploadedAt: true,
                 },
             },
             comments: {
                 select: {
                     id: true,
-                    text: true,
+                    content: true,
                     createdAt: true,
                     author: {
                         select: {
@@ -428,7 +428,7 @@ export async function getTask(id: number) {
                     id: true,
                     title: true,
                     status: true,
-                    completed: true,
+                    // completed: true, // Removed as it doesn't exist on Subtask model
                     createdAt: true,
                     assignedTo: {
                         select: {
@@ -442,7 +442,7 @@ export async function getTask(id: number) {
             },
             dependencies: {
                 select: {
-                    id: true,
+                    // id: true, // Removed as TaskDependency has composite key
                     dependsOnTaskId: true,
                     dependsOnTask: {
                         select: {
@@ -463,7 +463,7 @@ export async function getTask(id: number) {
             },
             dependents: {
                 select: {
-                    id: true,
+                    // id: true, // Removed as TaskDependency has composite key
                     taskId: true,
                     task: {
                         select: {

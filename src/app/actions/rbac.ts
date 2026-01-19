@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/activity-logger"
 import { clearPermissionCache } from "@/lib/rbac"
 import { PERMISSIONS, DEFAULT_ROLES, getAllPermissions } from "@/lib/permissions"
+import { requirePermission } from "@/lib/rbac-helpers"
 
 const roleSchema = z.object({
   name: z.string().min(1, "Role name is required"),
@@ -22,14 +23,8 @@ export async function getRoles() {
   const session = await getServerSession(authOptions)
   if (!session) throw new Error("Unauthorized")
 
-  // Check permission
-  const hasPermission = await import("@/lib/rbac").then(m => 
-    m.hasPermission(parseInt(session.user.id), PERMISSIONS.ROLE.READ)
-  ).catch(() => false)
-
-  if (!hasPermission && session.user.role !== "admin") {
-    throw new Error("Permission denied")
-  }
+  // Enforce RBAC - no role-based bypasses
+  await requirePermission(parseInt(session.user.id), PERMISSIONS.ROLE.READ)
 
   const roles = await prisma.role.findMany({
     include: {
@@ -58,13 +53,8 @@ export async function getRole(id: number) {
   const session = await getServerSession(authOptions)
   if (!session) throw new Error("Unauthorized")
 
-  const hasPermission = await import("@/lib/rbac").then(m => 
-    m.hasPermission(parseInt(session.user.id), PERMISSIONS.ROLE.READ)
-  ).catch(() => false)
-
-  if (!hasPermission && session.user.role !== "admin") {
-    throw new Error("Permission denied")
-  }
+  // Enforce RBAC - no role-based bypasses
+  await requirePermission(parseInt(session.user.id), PERMISSIONS.ROLE.READ)
 
   const role = await prisma.role.findUnique({
     where: { id },
@@ -94,11 +84,10 @@ export async function createRole(formData: FormData) {
   const session = await getServerSession(authOptions)
   if (!session) return { error: "Unauthorized" }
 
-  const hasPermission = await import("@/lib/rbac").then(m => 
-    m.hasPermission(parseInt(session.user.id), PERMISSIONS.ROLE.CREATE)
-  ).catch(() => false)
-
-  if (!hasPermission && session.user.role !== "admin") {
+  try {
+    // Enforce RBAC - no role-based bypasses
+    await requirePermission(parseInt(session.user.id), PERMISSIONS.ROLE.CREATE)
+  } catch (e) {
     return { error: "Permission denied" }
   }
 
@@ -172,11 +161,10 @@ export async function updateRole(id: number, formData: FormData) {
   const session = await getServerSession(authOptions)
   if (!session) return { error: "Unauthorized" }
 
-  const hasPermission = await import("@/lib/rbac").then(m => 
-    m.hasPermission(parseInt(session.user.id), PERMISSIONS.ROLE.UPDATE)
-  ).catch(() => false)
-
-  if (!hasPermission && session.user.role !== "admin") {
+  try {
+    // Enforce RBAC - no role-based bypasses
+    await requirePermission(parseInt(session.user.id), PERMISSIONS.ROLE.UPDATE)
+  } catch (e) {
     return { error: "Permission denied" }
   }
 
@@ -289,11 +277,10 @@ export async function deleteRole(id: number) {
   const session = await getServerSession(authOptions)
   if (!session) return { error: "Unauthorized" }
 
-  const hasPermission = await import("@/lib/rbac").then(m => 
-    m.hasPermission(parseInt(session.user.id), PERMISSIONS.ROLE.DELETE)
-  ).catch(() => false)
-
-  if (!hasPermission && session.user.role !== "admin") {
+  try {
+    // Enforce RBAC - no role-based bypasses
+    await requirePermission(parseInt(session.user.id), PERMISSIONS.ROLE.DELETE)
+  } catch (e) {
     return { error: "Permission denied" }
   }
 
@@ -378,11 +365,10 @@ export async function assignRoleToUser(
   const session = await getServerSession(authOptions)
   if (!session) return { error: "Unauthorized" }
 
-  const hasPermission = await import("@/lib/rbac").then(m => 
-    m.hasPermission(parseInt(session.user.id), PERMISSIONS.ROLE.ASSIGN)
-  ).catch(() => false)
-
-  if (!hasPermission && session.user.role !== "admin") {
+  try {
+    // Enforce RBAC - no role-based bypasses
+    await requirePermission(parseInt(session.user.id), PERMISSIONS.ROLE.ASSIGN)
+  } catch (e) {
     return { error: "Permission denied" }
   }
 
@@ -440,11 +426,10 @@ export async function removeRoleFromUser(
   const session = await getServerSession(authOptions)
   if (!session) return { error: "Unauthorized" }
 
-  const hasPermission = await import("@/lib/rbac").then(m => 
-    m.hasPermission(parseInt(session.user.id), PERMISSIONS.ROLE.ASSIGN)
-  ).catch(() => false)
-
-  if (!hasPermission && session.user.role !== "admin") {
+  try {
+    // Enforce RBAC - no role-based bypasses
+    await requirePermission(parseInt(session.user.id), PERMISSIONS.ROLE.ASSIGN)
+  } catch (e) {
     return { error: "Permission denied" }
   }
 

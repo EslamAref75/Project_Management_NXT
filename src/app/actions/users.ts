@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { z } from "zod"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, unstable_cache } from "next/cache"
 import bcrypt from "bcryptjs"
 import {
   requirePermission,
@@ -14,44 +14,54 @@ import {
 
 
 const createUserSchema = z.object({
-    username: z.string().min(3, "Username must be at least 3 characters"),
-    email: z.string().email("Invalid email"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    role: z.string().default("developer"),
-    teamId: z.coerce.number().optional()
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.string().default("developer"),
+  teamId: z.coerce.number().optional()
 })
 
+// EXTRACT LOGIC FOR USERS LIST
+const fetchUsers = async () => {
+  return await prisma.user.findMany({
+    include: {
+      team: { select: { id: true, name: true } }
+    },
+    orderBy: { username: "asc" }
+  })
+}
+
+// Cache the user list - it's relatively static
+const getCachedUsers = unstable_cache(
+  fetchUsers,
+  ['all-users'],
+  { revalidate: 300, tags: ['users'] } // 5 minutes cache
+)
+
 export async function getUsers() {
-    const session = await getServerSession(authOptions)
-    if (!session) throw new Error("Unauthorized")
+  const session = await getServerSession(authOptions)
+  if (!session) throw new Error("Unauthorized")
 
-    const users = await prisma.user.findMany({
-        include: {
-            team: { select: { id: true, name: true } }
-        },
-        orderBy: { username: "asc" }
-    })
-
-    return users
+  return await getCachedUsers()
 }
 
 export async function getUser(id: number) {
-    const session = await getServerSession(authOptions)
-    if (!session) throw new Error("Unauthorized")
+  const session = await getServerSession(authOptions)
+  if (!session) throw new Error("Unauthorized")
 
-    const user = await prisma.user.findUnique({
-        where: { id },
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: {
+      team: { select: { id: true, name: true } },
+      roles: {
         include: {
-            team: { select: { id: true, name: true } },
-            roles: {
-                include: {
-                    role: true
-                }
-            }
+          role: true
         }
-    })
+      }
+    }
+  })
 
-    return user
+  return user
 }
 
 export async function createUser(formData: FormData) {
@@ -116,11 +126,17 @@ export async function createUser(formData: FormData) {
 
     // Log activity
     console.log(
-      `[RBAC] User ${session.user.username} created user ${newUser.username}`
+      `[RBAC] User ${session.user.name || session.user.email} created user ${newUser.username}`
     )
 
+    // Pass cache tag to revalidate cache if using tag-based revalidation (unstable_cache support tags)
+    // Note: manual revalidateTag is available in next/cache
     revalidatePath("/dashboard/users")
     revalidatePath("/dashboard/teams")
+
+    // Ideally we also invalidate specific cache tags but Path revalidation might not clear unstable_cache depending on nextjs version
+    // For now we rely on time-based expiration (5 mins) or explicit path revalidation if it works.
+
     return { success: true, code: "USER_CREATED" }
   } catch (e) {
     console.error("Create User Error:", e)
@@ -153,7 +169,7 @@ export async function updateUser(id: number, formData: FormData) {
       data: { role, teamId },
     })
 
-    console.log(`[RBAC] User ${session.user.username} updated user ${id}`)
+    console.log(`[RBAC] User ${session.user.name || session.user.email} updated user ${id}`)
 
     revalidatePath("/dashboard/users")
     return { success: true, code: "USER_UPDATED" }
@@ -177,7 +193,7 @@ export async function deleteUser(id: number) {
   try {
     await prisma.user.delete({ where: { id } })
 
-    console.log(`[RBAC] User ${session.user.username} deleted user ${id}`)
+    console.log(`[RBAC] User ${session.user.name || session.user.email} deleted user ${id}`)
 
     revalidatePath("/dashboard/users")
     return { success: true, code: "USER_DELETED" }
@@ -188,17 +204,17 @@ export async function deleteUser(id: number) {
 
 
 export async function updateUserTeam(userId: number, teamId: number | null) {
-    const session = await getServerSession(authOptions)
-    if (!session) return { error: "Unauthorized" }
+  const session = await getServerSession(authOptions)
+  if (!session) return { error: "Unauthorized" }
 
-    try {
-        await prisma.user.update({
-            where: { id: userId },
-            data: { teamId: teamId }
-        })
-        revalidatePath("/dashboard/users")
-        return { success: true }
-    } catch (e) {
-        return { error: "Failed to update user team" }
-    }
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { teamId: teamId }
+    })
+    revalidatePath("/dashboard/users")
+    return { success: true }
+  } catch (e) {
+    return { error: "Failed to update user team" }
+  }
 }

@@ -483,19 +483,12 @@ export async function getAvailableProjects(teamId: number) {
     const session = await getServerSession(authOptions)
     if (!session) throw new Error("Unauthorized")
 
-    // Get projects already assigned to this team
-    const assignedProjects = await prisma.projectTeam.findMany({
-        where: { teamId },
-        select: { projectId: true }
-    })
-
-    const assignedProjectIds = assignedProjects.map(pt => pt.projectId)
-
-    // Get all projects not assigned to this team
+    // ✅ OPTIMIZED: Single query instead of N+1 pattern
+    // Get all projects NOT assigned to this team using relation filter
     const projects = await prisma.project.findMany({
         where: {
-            id: {
-                notIn: assignedProjectIds
+            projectTeams: {
+                none: { teamId } // No team assignment with this teamId
             }
         },
         select: {

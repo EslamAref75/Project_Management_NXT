@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { startOfDay, endOfDay } from "date-fns"
 import { hasPermissionWithoutRoleBypass } from "@/lib/rbac-helpers"
+import { unstable_cache } from "next/cache"
 
 export type ProjectStats = {
     totalTasks: number
@@ -28,13 +29,8 @@ export type TaskStats = {
 // Helper to get formatted date for debugging
 const formatDate = (date: Date) => date.toISOString().split('T')[0]
 
-export async function getProjectStats(projectId: number): Promise<{ success: boolean; data?: ProjectStats; error?: string }> {
-    const session = await getServerSession(authOptions)
-    if (!session) return { success: false, error: "Unauthorized" }
-
-    // No strict permission check for *stats* beyond what the page likely already does, 
-    // but implies the user can access this project.
-
+// EXTRACTED LOGIC FOR CACHING
+const fetchProjectStats = async (projectId: number) => {
     try {
         // OPTIMIZED: Use single aggregation query instead of 6 separate count queries
         const taskStats = await prisma.task.aggregate({
@@ -135,16 +131,25 @@ export async function getProjectStats(projectId: number): Promise<{ success: boo
         return { success: false, error: error.message }
     }
 }
-export async function getAllProjectsStats(): Promise<{ success: boolean; data?: { total: number; active: number; completed: number; urgent: number }; error?: string }> {
+
+// Cache wrapper for specific project stats
+const getCachedProjectStats = unstable_cache(
+    fetchProjectStats,
+    ['project-stats'],
+    { revalidate: 60, tags: ['project-stats'] }
+)
+
+export async function getProjectStats(projectId: number): Promise<{ success: boolean; data?: ProjectStats; error?: string }> {
     const session = await getServerSession(authOptions)
     if (!session) return { success: false, error: "Unauthorized" }
 
-    const userId = parseInt(session.user.id)
-    const canViewAllProjects = await hasPermissionWithoutRoleBypass(
-        userId,
-        "project.viewAll"
-    )
+    // Use cached version
+    // We pass projectId as part of arguments which unstable_cache uses for key generation
+    return await getCachedProjectStats(projectId)
+}
 
+// EXTRACT LOGIC FOR ALL PROJECTS STATS
+const fetchAllProjectsStats = async (userId: number, canViewAllProjects: boolean) => {
     try {
         const where: any = {}
 
@@ -200,6 +205,29 @@ export async function getAllProjectsStats(): Promise<{ success: boolean; data?: 
     }
 }
 
+// Cache wrapper for all projects stats
+// We need to pivot on userId if they can't view all projects
+// If they can view all, we can theoretically share the cache if we used a constant key, 
+// BUT 'canViewAllProjects' logic is user-dependent anyway. cache key should include userId if limited scope.
+const getCachedAllProjectsStats = unstable_cache(
+    fetchAllProjectsStats,
+    ['all-projects-stats'],
+    { revalidate: 60, tags: ['projects-stats'] }
+)
+
+export async function getAllProjectsStats(): Promise<{ success: boolean; data?: { total: number; active: number; completed: number; urgent: number }; error?: string }> {
+    const session = await getServerSession(authOptions)
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    const userId = parseInt(session.user.id)
+    const canViewAllProjects = await hasPermissionWithoutRoleBypass(
+        userId,
+        "project.viewAll"
+    )
+
+    return await getCachedAllProjectsStats(userId, canViewAllProjects)
+}
+
 export type TaskFilters = {
     projectId?: string | number | string[] | number[]
     statusId?: string | number | string[] | number[]
@@ -209,14 +237,7 @@ export type TaskFilters = {
     search?: string
 }
 
-export async function getTaskStats(filters: TaskFilters = {}): Promise<{ success: boolean; data?: TaskStats; error?: string }> {
-    const session = await getServerSession(authOptions)
-    if (!session) return { success: false, error: "Unauthorized" }
-
-    const userId = parseInt(session.user.id)
-    const userRole = session.user.role || "developer"
-    const isAdmin = userRole === "admin"
-
+const fetchTaskStats = async (userId: number, isAdmin: boolean, filters: TaskFilters) => {
     try {
         const todayStart = startOfDay(new Date())
         const todayEnd = endOfDay(new Date())
@@ -248,86 +269,6 @@ export async function getTaskStats(filters: TaskFilters = {}): Promise<{ success
             }
         }
 
-        // Status Filter
-        if (filters.statusId && filters.statusId !== "all") {
-            const statuses = Array.isArray(filters.statusId) ? filters.statusId : [filters.statusId]
-            const statusIds: number[] = []
-            const legacyStatuses: string[] = []
-
-            statuses.forEach(s => {
-                if (s === "legacy_active") legacyStatuses.push("active")
-                else if (s === "legacy_on_hold") legacyStatuses.push("on_hold")
-                else if (typeof s === 'string' && isNaN(parseInt(s))) legacyStatuses.push(s)
-                else statusIds.push(parseInt(s.toString()))
-            })
-
-            const statusConditions: any[] = []
-            if (statusIds.length > 0) statusConditions.push({ taskStatusId: { in: statusIds } })
-            if (legacyStatuses.length > 0) statusConditions.push({ status: { in: legacyStatuses }, taskStatusId: null })
-
-            if (statusConditions.length > 0) {
-                if (where.OR) {
-                    where.AND = [
-                        ...(where.AND || []),
-                        { OR: statusConditions }
-                    ]
-                } else {
-                    where.OR = statusConditions
-                }
-            }
-        }
-
-        // Priority Filter
-        if (filters.priority && filters.priority.length > 0) {
-            const priorities = Array.isArray(filters.priority) ? filters.priority : [filters.priority]
-            if (priorities.length > 0) {
-                where.priority = { in: priorities }
-            }
-        }
-
-        if (filters.search) {
-            const searchConditions = [
-                { title: { contains: filters.search } },
-                { description: { contains: filters.search } }
-            ]
-            if (where.OR) {
-                where.AND = [
-                    ...(where.AND || []),
-                    { OR: searchConditions }
-                ]
-                // Don't overwrite existing OR if it was status. Ideally AND the groups.
-                // Complex query construction: if we have multiple OR groups (status + search), we need AND(OR, OR).
-                // My logic above for status uses where.OR directly if empty, or appends to AND.
-                // Let's refine: Always push disjoint OR-groups to AND if we have potential conflicts.
-
-                // Simpler approach:
-                // If we successfully added generic 'where.projectId', that's fine (AND).
-                // Search is an OR group. Status is an OR group.
-                // We should likely restructure `where` to just use AND for top level groups.
-            } else {
-                where.OR = searchConditions
-            }
-        }
-
-        // Refined Logic for mix of ORs:
-        // Let's restart generic `where` construction to be safe if multiple ORs exist.
-        // Actually, Prisma `where` with top-level properties are ANDed.
-        // `where.OR` is a single list of conditions where at least one must be true.
-        // If we want (A or B) AND (C or D), we must use `where.AND = [{ OR: [A,B] }, { OR: [C,D] }]`.
-
-        // Let's fix the Status logic above to use AND if needed. 
-        // Re-writing the status/search block below in the replace content to be safe.
-        // See replacement content for final logic.
-
-        if (filters.dateRange) {
-            if (filters.dateRange.from || filters.dateRange.to) {
-                where.dueDate = {}
-                // Filter applies to Due Date usually
-                if (filters.dateRange.from) where.dueDate.gte = filters.dateRange.from
-                if (filters.dateRange.to) where.dueDate.lte = filters.dateRange.to
-            }
-        }
-
         // RE-COMPUTING WHERE PROPERLY TO HANDLE MULTIPLE OR GROUPS (Status, Search)
         // Resetting the dynamic parts
         const baseWhere: any = { ...where }
@@ -339,6 +280,15 @@ export async function getTaskStats(filters: TaskFilters = {}): Promise<{ success
         if (where.projectId) andConditions.push({ projectId: where.projectId })
         if (where.priority) andConditions.push({ priority: where.priority })
         if (where.dueDate) andConditions.push({ dueDate: where.dueDate })
+
+        // Priority Filter
+        if (filters.priority && filters.priority.length > 0) {
+            const priorities = Array.isArray(filters.priority) ? filters.priority : [filters.priority]
+            if (priorities.length > 0) {
+                andConditions.push({ priority: { in: priorities } })
+            }
+        }
+
 
         // Status Group
         if (filters.statusId && filters.statusId !== "all") {
@@ -370,6 +320,15 @@ export async function getTaskStats(filters: TaskFilters = {}): Promise<{ success
                     { description: { contains: filters.search } }
                 ]
             })
+        }
+
+        if (filters.dateRange) {
+            if (filters.dateRange.from || filters.dateRange.to) {
+                const dateCondition: any = {}
+                if (filters.dateRange.from) dateCondition.gte = filters.dateRange.from
+                if (filters.dateRange.to) dateCondition.lte = filters.dateRange.to
+                andConditions.push({ dueDate: dateCondition })
+            }
         }
 
         const finalWhere = {
@@ -504,6 +463,52 @@ export async function getTaskStats(filters: TaskFilters = {}): Promise<{ success
         console.error("Error fetching task stats:", error)
         return { success: false, error: error.message }
     }
+}
+
+// NOTE: Caching generic task stats with filters is hard because filters can be anything.
+// We only cache if filters are empty or minimal to avoid exploding cache storage.
+// For now, we DO NOT cache getTaskStats when filters are involved, or we accept that it's live.
+// Only caching the "base" dashboard stats.
+// Actually, `getSummaryStatsWithTrends` uses this with filters. 
+// If filters are complex, we might not want to cache. 
+// Let's caching logic be smart: if filters is empty object, cache.
+
+export async function getTaskStats(filters: TaskFilters = {}): Promise<{ success: boolean; data?: TaskStats; error?: string }> {
+    const session = await getServerSession(authOptions)
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    const userId = parseInt(session.user.id)
+    const userRole = session.user.role || "developer"
+    const isAdmin = userRole === "admin"
+
+    // If filters are complex, skip cache for now to avoid stale search results
+    const hasSearchOrDate = filters.search || (filters.dateRange && (filters.dateRange.from || filters.dateRange.to));
+
+    if (hasSearchOrDate) {
+        return await fetchTaskStats(userId, isAdmin, filters);
+    }
+
+    // Use unstable_cache for filtered stats could key on JSON.stringify(filters)
+    // Be careful with object key order.
+    // Let's trust that identical filter objects produce identical strings if keys are stable.
+    // We can rely on 'unstable_cache' variadic args.
+
+    // We need to pass filters as arguments to cache function
+    // But filters object structure might vary. 
+    // Let's create a specific key for 'basic' filters (project, status, priority)
+
+    const cacheKey = `task-stats-${JSON.stringify(filters)}`;
+
+    // Inline wrapper for this specific call with these filters
+    // This creates a NEW cache entry for every permutation.
+    // This is fine as long as permutations are reasonable (status buttons etc).
+    const cachedFetch = unstable_cache(
+        async (uid, admin, f) => fetchTaskStats(uid, admin, f),
+        ['task-stats-filtered'],
+        { revalidate: 30, tags: ['task-stats'] } // Short cache for filters
+    );
+
+    return await cachedFetch(userId, isAdmin, filters);
 }
 
 import { getStatTrend, StatWithTrend } from "@/lib/stats"

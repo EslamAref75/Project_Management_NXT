@@ -9,7 +9,7 @@ import {
   generateSafeFilename,
   getAllowedMimeTypes,
   getReadableFileSize,
-} from "../src/lib/file-upload-validator.ts"
+} from "../src/lib/file-upload-validator"
 
 console.log("🧪 Testing File Upload Validation\n")
 console.log("=" + "=".repeat(59))

@@ -1,0 +1,50 @@
+src/app/dashboard/page.tsx(46,41): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(50,41): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(51,49): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(52,48): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(57,31): error TS2339: Property 'projectstatuses' does not exist on type 'never'.
+src/app/dashboard/page.tsx(57,55): error TS2339: Property 'projectstatuses' does not exist on type 'never'.
+src/app/dashboard/page.tsx(58,34): error TS2339: Property 'projectstatuses' does not exist on type 'never'.
+src/app/dashboard/page.tsx(59,52): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(76,40): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(79,53): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(85,40): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(88,53): error TS2339: Property 'projects' does not exist on type 'never'.
+src/app/dashboard/page.tsx(103,37): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(107,37): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(108,45): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(109,44): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(117,33): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(121,33): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(122,41): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(123,40): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(130,33): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(134,33): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(135,41): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(136,40): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(143,33): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(147,33): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(148,41): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(149,40): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(156,19): error TS2339: Property 'taskstatuses' does not exist on type 'never'.
+src/app/dashboard/page.tsx(156,40): error TS2339: Property 'taskstatuses' does not exist on type 'never'.
+src/app/dashboard/page.tsx(159,27): error TS2339: Property 'taskstatuses' does not exist on type 'never'.
+src/app/dashboard/page.tsx(160,44): error TS2339: Property 'tasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(181,33): error TS2339: Property 'todayTasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(185,33): error TS2339: Property 'todayTasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(186,41): error TS2339: Property 'todayTasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(187,40): error TS2339: Property 'todayTasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(193,33): error TS2339: Property 'todayTasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(197,33): error TS2339: Property 'todayTasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(198,41): error TS2339: Property 'todayTasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(199,40): error TS2339: Property 'todayTasks' does not exist on type 'never'.
+src/app/dashboard/page.tsx(222,44): error TS2339: Property 'tasks' does not exist on type '{ success: boolean; tasks: { project: { id: number; name: string; }; id: number; createdAt: Date; _count: { comments: number; attachments: number; }; description: string | null; status: string; ... 6 more ...; dependencies: { ...; }[]; }[]; } | { ...; } | { ...; }'.
+  Property 'tasks' does not exist on type '{ error: string; success: boolean; details?: undefined; }'.
+src/app/dashboard/projects/[id]/page.tsx(184,22): error TS2339: Property 'priority' does not exist on type '{ tasks: { id: number; createdAt: Date; description: string | null; status: string; priority: string; assignees: { id: number; username: string; email: string; avatarUrl: string | null; }[]; ... 4 more ...; dependencies: { ...; }[]; }[]; ... 19 more ...; urgentMarkedBy: { ...; } | null; }'.
+src/app/dashboard/projects/[id]/page.tsx(186,21): error TS2741: Property 'priority' is missing in type '{ tasks: { id: number; createdAt: Date; description: string | null; status: string; priority: string; assignees: { id: number; username: string; email: string; avatarUrl: string | null; }[]; ... 4 more ...; dependencies: { ...; }[]; }[]; ... 19 more ...; urgentMarkedBy: { ...; } | null; }' but required in type '{ id: number; name: string; priority: string; urgentReason?: string | null | undefined; urgentMarkedAt?: Date | null | undefined; urgentMarkedBy?: { id: number; username: string; } | null | undefined; }'.
+src/components/tasks/tasks-dashboard.tsx(195,25): error TS2322: Type '{ from: Date | undefined; to: Date | undefined; } | undefined' is not assignable to type '{ from: Date; to: Date; } | undefined'.
+  Type '{ from: Date | undefined; to: Date | undefined; }' is not assignable to type '{ from: Date; to: Date; }'.
+    Types of property 'from' are incompatible.
+      Type 'Date | undefined' is not assignable to type 'Date'.
+        Type 'undefined' is not assignable to type 'Date'.
+src/components/user-button.tsx(58,74): error TS17001: JSX elements cannot have multiple attributes with the same name.

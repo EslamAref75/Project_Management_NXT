@@ -54,7 +54,7 @@ export async function uploadSystemLogo(formData: FormData) {
 
     // 6. LOG AND RETURN SUCCESS
     console.log(
-      `[Logo Upload] Admin ${session.user.username} uploaded logo: ${safeFilename}`
+      `[Logo Upload] Admin ${session.user.name || session.user.email} uploaded logo: ${safeFilename}`
     )
 
     return {
@@ -72,3 +72,4 @@ export async function uploadSystemLogo(formData: FormData) {
       details: error.message,
     }
   }
+}

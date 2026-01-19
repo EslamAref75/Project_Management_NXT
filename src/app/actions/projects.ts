@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/activity-logger"
 import { hasPermissionWithoutRoleBypass, handleAuthorizationError } from "@/lib/rbac-helpers"
 import { PERMISSIONS } from "@/lib/permissions"
+import { selectPatterns } from "@/lib/query-optimization"
 
 const projectSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -26,7 +27,8 @@ export async function getProjects() {
     const session = await getServerSession(authOptions)
     if (!session) throw new Error("Unauthorized")
 
-    // For now, fetch all projects. Later we can filter by user/team.
+    // ✅ OPTIMIZED: Use select pattern instead of fetching all columns
+    // Fetch only necessary fields to reduce data transfer
     const projects = await prisma.project.findMany({
         orderBy: { createdAt: "desc" },
         select: {
@@ -53,7 +55,7 @@ export async function getProjects() {
             _count: {
                 select: {
                     tasks: true,
-                    members: true,
+                    projectUsers: true,
                     notifications: true,
                 },
             },
@@ -225,7 +227,7 @@ export async function getProjectsWithFilters(params: {
                     _count: {
                         select: {
                             tasks: true,
-                            members: true,
+                            projectUsers: true,
                             notifications: true,
                         },
                     },
@@ -356,64 +358,136 @@ export async function getProject(id: number) {
     const session = await getServerSession(authOptions)
     if (!session) throw new Error("Unauthorized")
 
-    const project = await prisma.project.findUnique({
-        where: { id },
-        include: {
-            projectType: {
-                select: {
-                    id: true,
-                    name: true
+    // ✅ OPTIMIZED: Separate queries for different data needs
+    // Fetch project details, tasks, and team in parallel instead of nested includes
+    const [project, tasks, teams] = await Promise.all([
+        // Query 1: Project with basic relationships
+        prisma.project.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                status: true,
+                type: true,
+                priority: true,
+                projectStatusId: true,
+                projectTypeId: true,
+                projectManagerId: true,
+                startDate: true,
+                endDate: true,
+                createdAt: true,
+                createdById: true,
+                // isUrgent: true, // Removed as it doesn't exist on Project model
+                urgentMarkedAt: true,
+                urgentMarkedById: true,
+                projectType: {
+                    select: { id: true, name: true }
+                },
+                projectStatus: {
+                    select: { id: true, name: true }
+                },
+                projectManager: {
+                    select: {
+                        id: true,
+                        username: true,
+                        email: true,
+                        avatarUrl: true
+                    }
+                },
+                urgentMarkedBy: {
+                    select: {
+                        id: true,
+                        username: true
+                    }
+                },
+                _count: {
+                    select: {
+                        tasks: true,
+                        projectUsers: true,
+                        projectTeams: true
+                    }
                 }
-            },
-            projectStatus: {
-                select: {
-                    id: true,
-                    name: true
-                }
-            },
-            tasks: {
-                orderBy: { createdAt: "desc" },
-                include: {
-                    assignees: { select: { username: true, email: true, avatarUrl: true } },
-                    attachments: true,
-                    dependencies: {
-                        include: {
-                            dependsOnTask: {
-                                select: {
-                                    id: true,
-                                    status: true,
-                                    title: true
-                                }
+            }
+        }),
+
+        // Query 2: Tasks with minimal dependencies
+        prisma.task.findMany({
+            where: { projectId: id },
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                status: true,
+                taskStatusId: true,
+                priority: true,
+                dueDate: true,
+                createdAt: true,
+                assignees: {
+                    select: {
+                        id: true,
+                        username: true,
+                        email: true,
+                        avatarUrl: true
+                    }
+                },
+                attachments: {
+                    select: {
+                        id: true,
+                        fileName: true,
+                        fileUrl: true,
+                        fileType: true,
+                        fileSize: true
+                    }
+                },
+                dependencies: {
+                    select: {
+                        // id: true, // Removed as TaskDependency has composite key
+                        dependencyType: true,
+                        dependsOnTaskId: true,
+                        dependsOnTask: {
+                            select: {
+                                id: true,
+                                title: true,
+                                status: true,
+                                taskStatusId: true
                             }
                         }
                     }
                 }
-            },
-            projectManager: {
-                select: {
-                    id: true,
-                    username: true,
-                    email: true,
-                    avatarUrl: true
-                }
-            },
-            urgentMarkedBy: {
-                select: {
-                    id: true,
-                    username: true
-                }
-            },
-            projectTeams: {
-                include: {
-                    team: {
-                        include: {
-                            teamLead: {
-                                select: { id: true, username: true, email: true, avatarUrl: true }
-                            },
-                            members: {
-                                include: {
-                                    user: {
-                                        select: { id: true, username: true, email: true, avatarUrl: true }
+            }
+        }),
+
+        // Query 3: Project teams with members
+        prisma.projectTeam.findMany({
+            where: { projectId: id },
+            select: {
+                id: true,
+                teamId: true,
+                team: {
+                    select: {
+                        id: true,
+                        name: true,
+                        description: true,
+                        teamLead: {
+                            select: {
+                                id: true,
+                                username: true,
+                                email: true,
+                                avatarUrl: true
+                            }
+                        },
+                        members: {
+                            select: {
+                                id: true,
+                                userId: true,
+                                user: {
+                                    select: {
+                                        id: true,
+                                        username: true,
+                                        email: true,
+                                        avatarUrl: true
                                     }
                                 }
                             }
@@ -421,10 +495,19 @@ export async function getProject(id: number) {
                     }
                 }
             }
-        }
-    })
+        })
+    ])
 
-    return project
+    // Combine results
+    if (project) {
+        return {
+            ...project,
+            tasks,
+            projectTeams: teams
+        }
+    }
+
+    return null
 }
 
 export async function updateProject(id: number, formData: FormData) {

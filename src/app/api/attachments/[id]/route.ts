@@ -15,8 +15,10 @@ import { existsSync, readFileSync } from "fs"
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
+
   try {
     const session = await getServerSession(authOptions)
 
@@ -56,7 +58,7 @@ export async function GET(
     }
 
     // 3. CHECK PERMISSION - User must have access to the project
-    const projectId = attachment.projectId || attachment.task?.projectId
+    const projectId = attachment.task?.projectId
 
     if (!projectId) {
       return new Response("Invalid attachment - no associated project", {
@@ -72,7 +74,7 @@ export async function GET(
         OR: [
           { createdById: parseInt(session.user.id) }, // Creator
           {
-            members: {
+            projectUsers: {
               some: { userId: parseInt(session.user.id) },
             },
           }, // Team member

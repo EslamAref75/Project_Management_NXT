@@ -3,11 +3,15 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { checkLoginRateLimit, resetLoginRateLimit } from "@/lib/rate-limiter"
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     session: {
         strategy: "jwt",
+        // Session expires after 24 hours (86400 seconds)
+        // This is configured in environment via NEXTAUTH_SESSION_MAXAGE
+        maxAge: parseInt(process.env.NEXTAUTH_SESSION_MAXAGE || "86400"),
     },
     pages: {
         signIn: "/login",
@@ -23,6 +27,13 @@ export const authOptions: NextAuthOptions = {
                 if (!credentials?.username || !credentials?.password) {
                     console.log("[Auth] Missing credentials")
                     return null
+                }
+
+                // Check rate limiting on login attempts
+                const loginLimit = checkLoginRateLimit(credentials.username)
+                if (!loginLimit.allowed) {
+                    console.warn(`[Auth] Rate limit exceeded for user: ${credentials.username}`)
+                    throw new Error(`Too many login attempts. Try again after ${Math.ceil((loginLimit.resetTime - Date.now()) / 1000)} seconds.`)
                 }
 
                 try {
@@ -54,6 +65,9 @@ export const authOptions: NextAuthOptions = {
                         return null
                     }
 
+                    // ✅ Password correct - reset rate limit on successful login
+                    resetLoginRateLimit(credentials.username)
+
                     console.log(`[Auth] Successfully authenticated user: ${user.username} (Role: ${user.role})`)
 
                     // Return user object
@@ -65,6 +79,10 @@ export const authOptions: NextAuthOptions = {
                     }
                 } catch (error) {
                     console.error("[Auth] Error during authentication:", error)
+                    // Don't expose error details to client
+                    if (error instanceof Error && error.message.includes("Too many login attempts")) {
+                        throw error  // Re-throw rate limit errors
+                    }
                     return null
                 }
             }
