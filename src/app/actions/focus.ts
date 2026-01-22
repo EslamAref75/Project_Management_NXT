@@ -5,9 +5,19 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { startOfDay, endOfDay } from "date-fns"
+import { autoCheckAndReset } from "@/lib/auto-reset"
 
 export async function getFocusData() {
     try {
+        // Automatically check if we need to reset (new day in Cairo timezone)
+        // This is non-blocking - if it fails, we continue with normal operation
+        // TEMPORARILY DISABLED FOR DEBUGGING
+        try {
+            await autoCheckAndReset()
+        } catch (autoResetError) {
+            console.error('Auto-reset check failed (non-blocking):', autoResetError)
+        }
+
         const session = await getServerSession(authOptions)
         if (!session) {
             console.error("getFocusData: No session")

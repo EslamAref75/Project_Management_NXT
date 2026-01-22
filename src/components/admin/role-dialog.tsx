@@ -111,9 +111,9 @@ export function RoleDialog({ open, onOpenChange, permissions, permissionsGrouped
             <div className="space-y-2">
               <Label>Permissions</Label>
               <Tabs defaultValue={Object.keys(permissionsGrouped)[0]} className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  {Object.keys(permissionsGrouped).slice(0, 4).map((module) => (
-                    <TabsTrigger key={module} value={module}>
+                <TabsList className="flex flex-wrap h-auto w-full justify-start gap-1 p-1">
+                  {Object.keys(permissionsGrouped).map((module) => (
+                    <TabsTrigger key={module} value={module} className="flex-grow-0">
                       {module}
                     </TabsTrigger>
                   ))}
