@@ -1,0 +1,81 @@
+import { PrismaClient } from '@prisma/client'
+import * as bcrypt from 'bcryptjs'
+import { addDays, subDays, subWeeks } from 'date-fns'
+import { getAllPermissions } from '../src/lib/permissions'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  console.log('🌱 Starting database seeding...\n')
+
+  // Clean up existing data (optional - comment out if you want to keep existing data)
+  console.log('🧹 Cleaning existing data...')
+  await prisma.taskDependency.deleteMany()
+  await prisma.subtaskDependency.deleteMany()
+  await prisma.taskLabel.deleteMany()
+  await prisma.timeLog.deleteMany()
+  await prisma.commentMention.deleteMany()
+  await prisma.comment.deleteMany()
+  await prisma.subtask.deleteMany()
+  await prisma.task.deleteMany()
+  await prisma.deliverable.deleteMany()
+  await prisma.projectPhase.deleteMany()
+  await prisma.projectSettingsChangeLog.deleteMany()
+  await prisma.projectSetting.deleteMany()
+  await prisma.projectNotificationPreference.deleteMany()
+  await prisma.projectNotification.deleteMany()
+  await prisma.urgentProjectAcknowledgement.deleteMany()
+  await prisma.projectTeam.deleteMany()
+  await prisma.projectUser.deleteMany()
+  await prisma.scopeHistory.deleteMany()
+  await prisma.attachment.deleteMany()
+  await prisma.activityLog.deleteMany()
+  await prisma.automationRule.deleteMany()
+  await prisma.notification.deleteMany()
+  await prisma.userSettingsChangeLog.deleteMany()
+  await prisma.userSetting.deleteMany()
+  await prisma.settingsChangeLog.deleteMany()
+  await prisma.systemSetting.deleteMany()
+  await prisma.userRole.deleteMany()
+  await prisma.teamMember.deleteMany()
+  await prisma.project.deleteMany()
+  await prisma.team.deleteMany()
+  await prisma.label.deleteMany()
+  await prisma.user.deleteMany()
+  await prisma.rolePermission.deleteMany()
+  await prisma.permission.deleteMany()
+  await prisma.role.deleteMany()
+  await prisma.taskStatus.deleteMany()
+  await prisma.projectStatus.deleteMany()
+  await prisma.projectType.deleteMany()
+  await prisma.statSnapshot.deleteMany()
+  await prisma.productivitySnapshot.deleteMany()
+  await prisma.forecastSnapshot.deleteMany()
+
+  console.log('✅ Cleanup complete\n')
+
+  // 1. Seed Permissions - DYNAMICALLY FROM permissions.ts
+  console.log('📋 Seeding Permissions...')
+  
+  // Get all permissions from the permissions definition file
+  const allPermissionKeys = getAllPermissions()
+  
+  const createdPermissions = []
+  for (const key of allPermissionKeys) {
+    const [module, ...actionParts] = key.split('.')
+    const action = actionParts.join('.')
+    const name = action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    const category = actionParts.length > 1 ? actionParts[0] : null
+
+    const p = await prisma.permission.create({
+      data: {
+        key,
+        name,
+        description: `Permission to ${action.replace(/_/g, ' ')}`,
+        module,
+        category,
+      },
+    })
+    createdPermissions.push(p)
+  }
+  console.log(`✅ Created ${createdPermissions.length} permissions\n`)

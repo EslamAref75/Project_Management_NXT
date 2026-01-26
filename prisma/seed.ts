@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { addDays, subDays, subWeeks } from 'date-fns'
+import { getAllPermissions } from '../src/lib/permissions'
 
 const prisma = new PrismaClient()
 
@@ -53,46 +54,27 @@ async function main() {
 
   console.log('✅ Cleanup complete\n')
 
-  // 1. Seed Permissions
+  // 1. Seed Permissions - DYNAMICALLY FROM permissions.ts
   console.log('📋 Seeding Permissions...')
-  const permissions = [
-    // Project permissions
-    { key: 'project.create', name: 'Create Project', module: 'project', category: 'management' },
-    { key: 'project.read', name: 'View Project', module: 'project', category: 'view' },
-    { key: 'project.update', name: 'Update Project', module: 'project', category: 'edit' },
-    { key: 'project.delete', name: 'Delete Project', module: 'project', category: 'management' },
-    { key: 'project.manage_settings', name: 'Manage Project Settings', module: 'project', category: 'management' },
-    
-    // Task permissions
-    { key: 'task.create', name: 'Create Task', module: 'task', category: 'management' },
-    { key: 'task.read', name: 'View Task', module: 'task', category: 'view' },
-    { key: 'task.update', name: 'Update Task', module: 'task', category: 'edit' },
-    { key: 'task.delete', name: 'Delete Task', module: 'task', category: 'management' },
-    { key: 'task.assign', name: 'Assign Task', module: 'task', category: 'management' },
-    
-    // User permissions
-    { key: 'user.create', name: 'Create User', module: 'user', category: 'management' },
-    { key: 'user.read', name: 'View User', module: 'user', category: 'view' },
-    { key: 'user.update', name: 'Update User', module: 'user', category: 'edit' },
-    { key: 'user.delete', name: 'Delete User', module: 'user', category: 'management' },
-    
-    // Team permissions
-    { key: 'team.create', name: 'Create Team', module: 'team', category: 'management' },
-    { key: 'team.read', name: 'View Team', module: 'team', category: 'view' },
-    { key: 'team.update', name: 'Update Team', module: 'team', category: 'edit' },
-    { key: 'team.delete', name: 'Delete Team', module: 'team', category: 'management' },
-    
-    // Settings permissions
-    { key: 'settings.read', name: 'View Settings', module: 'settings', category: 'view' },
-    { key: 'settings.update', name: 'Update Settings', module: 'settings', category: 'edit' },
-    
-    // Reports permissions
-    { key: 'reports.read', name: 'View Reports', module: 'reports', category: 'view' },
-  ]
+
+  // Get all permissions from the permissions definition file
+  const allPermissionKeys = getAllPermissions()
 
   const createdPermissions = []
-  for (const perm of permissions) {
-    const p = await prisma.permission.create({ data: perm })
+  for (const key of allPermissionKeys) {
+    const [module, ...actionParts] = key.split('.')
+    const action = actionParts.join('.')
+    const name = action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    const category = actionParts.length > 1 ? actionParts[0] : null
+    const p = await prisma.permission.create({
+      data: {
+        key,
+        name,
+        description: `Permission to ${action.replace(/_/g, ' ')}`,
+        module,
+        category,
+      },
+    })
     createdPermissions.push(p)
   }
   console.log(`✅ Created ${createdPermissions.length} permissions\n`)
@@ -350,9 +332,9 @@ async function main() {
       data: { teamId: createdTeams[0].id, userId: dev3.id, role: 'member' },
     })
   }
-  
+
   // Backend Team (teamLead: dev2) - no additional members needed
-  
+
   // Full Stack Team (teamLead: pm1) - add dev1 and dev2 as members
   if (createdTeams[2]) {
     await prisma.teamMember.create({
@@ -1040,4 +1022,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
 
