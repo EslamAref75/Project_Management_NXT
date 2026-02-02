@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +25,7 @@ export function ProjectNotificationDropdown({
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const previousNotificationIdsRef = useRef<Set<number>>(new Set())
 
   const playNotificationSound = async () => {
     try {
@@ -65,6 +66,9 @@ export function ProjectNotificationDropdown({
   }
 
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') return
+
     const fetchNotifications = async () => {
       setLoading(true)
       const result = await getProjectNotifications(projectId, {
@@ -72,8 +76,8 @@ export function ProjectNotificationDropdown({
         offset: 0,
       })
       if (result.success && result.notifications) {
-        // Check for new unread notifications
-        const previousIds = new Set(notifications.map(n => n.id))
+        // Check for new unread notifications using ref to avoid stale closure
+        const previousIds = previousNotificationIdsRef.current
         const newUnread = result.notifications.filter(
           (n) => !n.isRead && !previousIds.has(n.id)
         )
@@ -101,14 +105,17 @@ export function ProjectNotificationDropdown({
         })
 
         setNotifications(sorted)
+
+        // Update ref with current notification IDs
+        previousNotificationIdsRef.current = new Set(sorted.map(n => n.id))
       }
       setLoading(false)
     }
 
     fetchNotifications()
 
-    // Poll for new notifications every 5 seconds
-    const interval = setInterval(fetchNotifications, 5000)
+    // Poll for new notifications every 30 seconds (reduced from 5s for better performance)
+    const interval = setInterval(fetchNotifications, 30000)
 
     return () => clearInterval(interval)
   }, [projectId])

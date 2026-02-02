@@ -20,15 +20,30 @@ interface RateLimitConfig {
 // In-memory store for rate limits
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-// Cleanup old entries every 5 minutes
-setInterval(() => {
+// Track last cleanup time to avoid excessive cleanup operations
+let lastCleanupTime = 0;
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Clean up expired entries from the rate limit store
+ * This is called on-demand during rate limit checks instead of running continuously
+ */
+function cleanupExpiredEntries(): void {
   const now = Date.now();
+
+  // Only run cleanup if enough time has passed since last cleanup
+  if (now - lastCleanupTime < CLEANUP_INTERVAL) {
+    return;
+  }
+
+  lastCleanupTime = now;
+
   for (const [key, entry] of rateLimitStore.entries()) {
     if (entry.resetTime < now) {
       rateLimitStore.delete(key);
     }
   }
-}, 5 * 60 * 1000);
+}
 
 /**
  * Rate limit a request
@@ -41,6 +56,9 @@ export function rateLimitCheck(
   key: string,
   config: RateLimitConfig = {}
 ): { allowed: boolean; current: number; limit: number; remaining: number; resetTime: number } {
+  // Run cleanup of expired entries periodically
+  cleanupExpiredEntries();
+
   const windowMs = config.windowMs || 15 * 60 * 1000; // 15 minutes default
   const maxRequests = config.maxRequests || 100;
   const keyPrefix = config.keyPrefix || "rl:";

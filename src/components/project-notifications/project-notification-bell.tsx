@@ -29,6 +29,9 @@ export function ProjectNotificationBell({ projectId }: ProjectNotificationBellPr
   const router = useRouter()
 
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') return
+
     // Fetch unread count on mount
     const fetchUnreadCount = async () => {
       const result = await getProjectUnreadNotificationCount(projectId)
@@ -51,8 +54,8 @@ export function ProjectNotificationBell({ projectId }: ProjectNotificationBellPr
 
     fetchUnreadCount()
 
-    // Poll for new notifications every 5 seconds
-    const interval = setInterval(fetchUnreadCount, 5000)
+    // Poll for new notifications every 30 seconds (standardized interval)
+    const interval = setInterval(fetchUnreadCount, 30000)
 
     return () => clearInterval(interval)
   }, [projectId])

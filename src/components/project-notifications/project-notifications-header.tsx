@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { 
-  getAllProjectsUnreadNotificationCount, 
+import {
+  getAllProjectsUnreadNotificationCount,
   getAllProjectsNotifications,
-  markProjectNotificationAsRead 
+  markProjectNotificationAsRead
 } from "@/app/actions/project-notifications"
 import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
@@ -70,6 +70,9 @@ export function ProjectNotificationsHeader() {
   const previousNotificationIdsRef = useRef<Set<number>>(new Set())
 
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') return
+
     let isMounted = true
     let intervalId: NodeJS.Timeout | null = null
 
@@ -102,7 +105,7 @@ export function ProjectNotificationsHeader() {
                   .filter((n: any) => !n.isRead)
                   .map((n: any) => n.id)
               )
-              
+
               // Find new notifications that weren't in the previous set
               const newNotifications = notificationsResult.notifications.filter(
                 (n: any) => !n.isRead && !previousNotificationIdsRef.current.has(n.id)
@@ -131,11 +134,11 @@ export function ProjectNotificationsHeader() {
           const currentNotificationIds = new Set(
             notificationsResult.notifications.map((n: any) => n.id)
           )
-          
+
           // Only update notifications if they actually changed
           const currentIdsString = JSON.stringify([...currentNotificationIds].sort())
           const previousIdsString = JSON.stringify([...previousNotificationIdsRef.current].sort())
-          
+
           if (currentIdsString !== previousIdsString) {
             previousNotificationIdsRef.current = currentNotificationIds
             setNotifications(notificationsResult.notifications)
@@ -153,12 +156,12 @@ export function ProjectNotificationsHeader() {
     // Fetch immediately
     fetchData()
 
-    // Poll for new notifications every 5 seconds (reduced frequency to prevent blinking)
+    // Poll for new notifications every 30 seconds (standardized interval)
     intervalId = setInterval(() => {
       if (isMounted) {
         fetchData()
       }
-    }, 5000)
+    }, 30000)
 
     return () => {
       isMounted = false
@@ -251,9 +254,8 @@ export function ProjectNotificationsHeader() {
                 {notifications.map((notification) => (
                   <div
                     key={`${notification.projectId}-${notification.id}`}
-                    className={`p-4 hover:bg-muted/50 transition-colors ${
-                      !notification.isRead ? "bg-blue-50/50" : ""
-                    }`}
+                    className={`p-4 hover:bg-muted/50 transition-colors ${!notification.isRead ? "bg-blue-50/50" : ""
+                      }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">

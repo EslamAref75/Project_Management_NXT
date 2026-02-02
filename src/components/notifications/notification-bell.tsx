@@ -18,6 +18,8 @@ export function NotificationBell() {
     const [isOpen, setIsOpen] = useState(false)
 
     useEffect(() => {
+        // Only run on client-side
+        if (typeof window === 'undefined') return
         if (!session) return
 
         // Fetch unread count on mount
@@ -70,7 +72,7 @@ export function NotificationBell() {
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
-                <NotificationList 
+                <NotificationList
                     onClose={() => setIsOpen(false)}
                     onCountChange={(count) => setUnreadCount(count)}
                 />
