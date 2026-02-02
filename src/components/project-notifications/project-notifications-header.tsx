@@ -18,7 +18,6 @@ import {
 import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
 import { Check } from "lucide-react"
-import { useRouter } from "next/navigation"
 
 // Sound generation function
 function playNotificationSound() {
@@ -65,20 +64,22 @@ export function ProjectNotificationsHeader() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
   const previousUnreadCountRef = useRef(0)
   const previousNotificationIdsRef = useRef<Set<number>>(new Set())
+  const hasLoadedRef = useRef(false)
+  const unreadCountRef = useRef(0)
+  const POLL_INTERVAL_MS = 30000
 
   useEffect(() => {
     let isMounted = true
-    let intervalId: NodeJS.Timeout | null = null
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
 
     const fetchData = async () => {
-      if (!isMounted) return
+      if (!isMounted || document.visibilityState !== "visible") return
 
       try {
         // Only show loading on initial load
-        if (notifications.length === 0 && unreadCount === 0) {
+        if (!hasLoadedRef.current) {
           setLoading(true)
         }
 
@@ -120,8 +121,9 @@ export function ProjectNotificationsHeader() {
           }
 
           // Only update state if count actually changed
-          if (newUnreadCount !== unreadCount) {
+          if (newUnreadCount !== unreadCountRef.current) {
             setUnreadCount(newUnreadCount)
+            unreadCountRef.current = newUnreadCount
           }
           previousUnreadCountRef.current = newUnreadCount
         }
@@ -145,26 +147,37 @@ export function ProjectNotificationsHeader() {
         console.error('[Notifications] Error in fetchData:', error)
       } finally {
         if (isMounted) {
+          hasLoadedRef.current = true
           setLoading(false)
         }
       }
     }
 
-    // Fetch immediately
-    fetchData()
+    const scheduleNext = () => {
+      if (!isMounted) return
+      timeoutId = setTimeout(async () => {
+        await fetchData()
+        scheduleNext()
+      }, POLL_INTERVAL_MS)
+    }
 
-    // Poll for new notifications every 5 seconds (reduced frequency to prevent blinking)
-    intervalId = setInterval(() => {
-      if (isMounted) {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
         fetchData()
       }
-    }, 5000)
+    }
+
+    // Fetch immediately
+    fetchData()
+    scheduleNext()
+    document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
       isMounted = false
-      if (intervalId) {
-        clearInterval(intervalId)
+      if (timeoutId) {
+        clearTimeout(timeoutId)
       }
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, []) // Empty dependency array - only run on mount
 
@@ -177,7 +190,11 @@ export function ProjectNotificationsHeader() {
         )
       )
       // Update unread count
-      setUnreadCount((prev) => Math.max(0, prev - 1))
+      setUnreadCount((prev) => {
+        const next = Math.max(0, prev - 1)
+        unreadCountRef.current = next
+        return next
+      })
       // Don't refresh the router to prevent blinking
     }
   }
@@ -318,4 +335,3 @@ export function ProjectNotificationsHeader() {
     </Popover>
   )
 }
-

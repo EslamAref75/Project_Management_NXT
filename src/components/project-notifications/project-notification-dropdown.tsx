@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,16 +15,22 @@ import { useRouter } from "next/navigation"
 
 interface ProjectNotificationDropdownProps {
   projectId: number
+  isOpen?: boolean
   onClose?: () => void
 }
 
 export function ProjectNotificationDropdown({
   projectId,
+  isOpen = true,
   onClose,
 }: ProjectNotificationDropdownProps) {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const previousIdsRef = useRef<Set<number>>(new Set())
+  const hasLoadedRef = useRef(false)
+
+  const POLL_INTERVAL_MS = 15000
 
   const playNotificationSound = async () => {
     try {
@@ -65,53 +71,90 @@ export function ProjectNotificationDropdown({
   }
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoading(true)
-      const result = await getProjectNotifications(projectId, {
-        limit: 15,
-        offset: 0,
-      })
-      if (result.success && result.notifications) {
-        // Check for new unread notifications
-        const previousIds = new Set(notifications.map(n => n.id))
-        const newUnread = result.notifications.filter(
-          (n) => !n.isRead && !previousIds.has(n.id)
-        )
+    if (!isOpen) {
+      setLoading(false)
+      return
+    }
 
-        // Play sound for new notifications (critical/urgent always, others based on preferences)
-        if (newUnread.length > 0) {
-          newUnread.forEach((notification) => {
-            if (notification.soundRequired || notification.isUrgent) {
-              // Always play for critical/urgent notifications
-              playNotificationSound()
-            } else {
-              // Check preferences for non-critical
+    let isActive = true
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+    const fetchNotifications = async () => {
+      if (!isActive || document.visibilityState !== "visible") return
+      if (!hasLoadedRef.current) {
+        setLoading(true)
+      }
+      try {
+        const result = await getProjectNotifications(projectId, {
+          limit: 15,
+          offset: 0,
+        })
+        if (!isActive) return
+        if (result.success && result.notifications) {
+          // Check for new unread notifications
+          const newUnread = result.notifications.filter(
+            (n) => !n.isRead && !previousIdsRef.current.has(n.id)
+          )
+
+          // Play sound for new notifications (critical/urgent always, others based on preferences)
+          if (newUnread.length > 0) {
+            const hasUrgentNotification = newUnread.some(
+              (notification) => notification.soundRequired || notification.isUrgent
+            )
+            if (hasUrgentNotification || newUnread.length > 0) {
+              // Check preferences for non-critical in playNotificationSound
               playNotificationSound()
             }
+          }
+
+          // Sort notifications: urgent first, then by date
+          const sorted = result.notifications.sort((a, b) => {
+            if (a.isUrgent && !b.isUrgent) return -1
+            if (!a.isUrgent && b.isUrgent) return 1
+            if (a.requiresAcknowledgment && !b.requiresAcknowledgment) return -1
+            if (!a.requiresAcknowledgment && b.requiresAcknowledgment) return 1
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           })
+
+          previousIdsRef.current = new Set(result.notifications.map((n) => n.id))
+          setNotifications(sorted)
         }
-
-        // Sort notifications: urgent first, then by date
-        const sorted = result.notifications.sort((a, b) => {
-          if (a.isUrgent && !b.isUrgent) return -1
-          if (!a.isUrgent && b.isUrgent) return 1
-          if (a.requiresAcknowledgment && !b.requiresAcknowledgment) return -1
-          if (!a.requiresAcknowledgment && b.requiresAcknowledgment) return 1
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        })
-
-        setNotifications(sorted)
+      } catch (error) {
+        console.error("[ProjectNotifications] Failed to load notifications:", error)
+      } finally {
+        if (!hasLoadedRef.current) {
+          setLoading(false)
+          hasLoadedRef.current = true
+        }
       }
-      setLoading(false)
+    }
+
+    const scheduleNext = () => {
+      if (!isActive) return
+      timeoutId = setTimeout(async () => {
+        await fetchNotifications()
+        scheduleNext()
+      }, POLL_INTERVAL_MS)
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchNotifications()
+      }
     }
 
     fetchNotifications()
+    scheduleNext()
+    document.addEventListener("visibilitychange", handleVisibilityChange)
 
-    // Poll for new notifications every 5 seconds
-    const interval = setInterval(fetchNotifications, 5000)
-
-    return () => clearInterval(interval)
-  }, [projectId])
+    return () => {
+      isActive = false
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [projectId, isOpen])
 
   const handleMarkAsRead = async (notificationId: number) => {
     const result = await markProjectNotificationAsRead(projectId, notificationId)
@@ -126,24 +169,15 @@ export function ProjectNotificationDropdown({
   }
 
   const getNotificationLink = (notification: any) => {
-    console.log("🔔 [NotificationLink] Processing:", {
-      id: notification.id,
-      type: notification.type,
-      entityType: notification.entityType,
-      entityId: notification.entityId
-    })
-
     // Check either entityType or type for robustness
     const isTask = notification.entityType === "task" || notification.type === "task"
     const isMention = notification.entityType === "comment_mention" || notification.type === "comment_mention"
 
     if ((isTask || isMention) && notification.entityId) {
       const link = `/dashboard/projects/${projectId}/tasks/${notification.entityId}`
-      console.log("🔗 [NotificationLink] Generated Task Link:", link)
       return link
     }
 
-    console.log("🔗 [NotificationLink] Fallback to List. Reason:", { isTask, isMention, entityId: notification.entityId })
     return `/dashboard/projects/${projectId}/notifications`
   }
 
@@ -272,4 +306,3 @@ export function ProjectNotificationDropdown({
     </div>
   )
 }
-
