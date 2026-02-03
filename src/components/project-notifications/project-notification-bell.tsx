@@ -9,11 +9,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { getProjectUnreadNotificationCount, getProjectNotifications } from "@/app/actions/project-notifications"
+import { getProjectUnreadNotificationCount } from "@/app/actions/project-notifications"
 import { ProjectNotificationDropdown } from "./project-notification-dropdown"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
 
 interface ProjectNotificationBellProps {
   projectId: number
@@ -26,15 +23,20 @@ export function ProjectNotificationBell({ projectId }: ProjectNotificationBellPr
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const prevCountRef = useRef(0)
-  const router = useRouter()
+  const POLL_INTERVAL_MS = 30000
 
   useEffect(() => {
     // Only run on client-side
     if (typeof window === 'undefined') return
 
     // Fetch unread count on mount
+    let isActive = true
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
     const fetchUnreadCount = async () => {
+      if (!isActive || document.visibilityState !== "visible") return
       const result = await getProjectUnreadNotificationCount(projectId)
+      if (!isActive) return
       if (result.success && result.count !== undefined) {
         // Play sound if count increased and it's not the initial load (prevCount > 0 or handled differently)
         // logic: if new count > old count, and old count was tracked (or just simple increase)
@@ -52,12 +54,32 @@ export function ProjectNotificationBell({ projectId }: ProjectNotificationBellPr
       }
     }
 
+    const scheduleNext = () => {
+      if (!isActive) return
+      timeoutId = setTimeout(async () => {
+        await fetchUnreadCount()
+        scheduleNext()
+      }, POLL_INTERVAL_MS)
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchUnreadCount()
+      }
+    }
+
     fetchUnreadCount()
 
-    // Poll for new notifications every 30 seconds (standardized interval)
-    const interval = setInterval(fetchUnreadCount, 30000)
+    // Poll for new notifications every 5 seconds
+    const interval = setInterval(fetchUnreadCount, 5000)
 
-    return () => clearInterval(interval)
+    return () => {
+      isActive = false
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
   }, [projectId])
 
   return (
@@ -83,10 +105,10 @@ export function ProjectNotificationBell({ projectId }: ProjectNotificationBellPr
       <PopoverContent className="w-96 p-0" align="end">
         <ProjectNotificationDropdown
           projectId={projectId}
+          isOpen={isOpen}
           onClose={() => setIsOpen(false)}
         />
       </PopoverContent>
     </Popover>
   )
 }
-
