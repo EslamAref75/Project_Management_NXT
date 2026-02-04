@@ -61,7 +61,7 @@ export async function getUserSettings(userId: number) {
             grouped[setting.category].push({
                 id: setting.id,
                 key: setting.key,
-                value: JSON.parse(setting.value),
+                value: safeJsonParse(setting.value),
                 category: setting.category,
                 updatedAt: setting.updatedAt,
                 updatedBy: setting.updater
@@ -132,28 +132,28 @@ export async function getResolvedUserSettings(userId: number, projectId?: number
             if (userSetting && alwaysUserOverride.includes(category)) {
                 // User override always allowed for these categories
                 resolved[category] = {
-                    value: JSON.parse(userSetting.value),
+                    value: safeJsonParse(userSetting.value),
                     source: "user",
                     enabled: true
                 }
             } else if (projectSetting && projectSetting.enabled) {
                 // Project override
                 resolved[category] = {
-                    value: JSON.parse(projectSetting.value),
+                    value: safeJsonParse(projectSetting.value),
                     source: "project",
                     enabled: true
                 }
             } else if (userSetting) {
                 // User setting (for categories that don't always override)
                 resolved[category] = {
-                    value: JSON.parse(userSetting.value),
+                    value: safeJsonParse(userSetting.value),
                     source: "user",
                     enabled: true
                 }
             } else if (globalSetting) {
                 // Global default
                 resolved[category] = {
-                    value: JSON.parse(globalSetting.value),
+                    value: safeJsonParse(globalSetting.value),
                     source: "global",
                     enabled: false
                 }
@@ -248,7 +248,7 @@ export async function getUserSetting(userId: number, key: string) {
             setting: {
                 id: setting.id,
                 key: setting.key,
-                value: JSON.parse(setting.value),
+                value: safeJsonParse(setting.value),
                 category: setting.category,
                 updatedAt: setting.updatedAt,
                 updatedBy: setting.updater
@@ -511,6 +511,15 @@ function validateSettingValue(category: string, value: any): boolean {
         }
     } catch {
         return false
+    }
+}
+
+function safeJsonParse(value: string): any {
+    try {
+        return JSON.parse(value)
+    } catch {
+        // If parsing fails, return the original string
+        return value
     }
 }
 

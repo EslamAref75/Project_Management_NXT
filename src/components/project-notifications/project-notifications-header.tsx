@@ -76,6 +76,7 @@ export function ProjectNotificationsHeader() {
 
     let isMounted = true
     let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let intervalId: ReturnType<typeof setInterval> | null = null
 
     const fetchData = async () => {
       if (!isMounted || document.visibilityState !== "visible") return
@@ -180,10 +181,16 @@ export function ProjectNotificationsHeader() {
       }
     }, 5000)
 
+    // Listen for visibility changes
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
     return () => {
       isMounted = false
       if (timeoutId) {
         clearTimeout(timeoutId)
+      }
+      if (intervalId) {
+        clearInterval(intervalId)
       }
       document.removeEventListener("visibilitychange", handleVisibilityChange)
     }

@@ -91,7 +91,7 @@ model Project {
   startDate               DateTime?                       @map("start_date")
   endDate                 DateTime?                       @map("end_date")
   projectManagerId        Int?                            @map("project_manager_id")
-  createdById             Int                             @map("created_by")
+  createdById             Int?                            @map("created_by")
   createdAt               DateTime                        @default(now()) @map("created_at")
   updatedAt               DateTime                        @updatedAt @map("updated_at")
   deliverables            Deliverable[]
@@ -136,7 +136,7 @@ model Task {
   updatedAt      DateTime         @updatedAt @map("updated_at")
   projectId      Int              @map("project_id")
   teamId         Int?             @map("team_id")
-  createdById    Int              @map("created_by_id")
+  createdById    Int?             @map("created_by_id")
   deliverableId  Int?             @map("deliverable_id")
   attachments    Attachment[]
   comments       Comment[]
@@ -145,7 +145,7 @@ model Task {
   dependencies   TaskDependency[] @relation("Dependent")
   labels         TaskLabel[]
   deliverable    Deliverable?     @relation(fields: [deliverableId], references: [id])
-  creator        User             @relation("TaskCreator", fields: [createdById], references: [id])
+  creator        User?            @relation("TaskCreator", fields: [createdById], references: [id])
   team           Team?            @relation(fields: [teamId], references: [id])
   project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   taskStatus     TaskStatus?      @relation(fields: [taskStatusId], references: [id])

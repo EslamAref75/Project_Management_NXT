@@ -18,7 +18,7 @@ interface ProjectNotificationBellProps {
 
 export function ProjectNotificationBell({ projectId }: ProjectNotificationBellProps) {
   // Simple notification sound (short beep/bell)
-  const NOTIFICATION_SOUND = "data:audio/mp3;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAG84AAAAAABwAAAAAAAAAAAA6gAAAAADgAAAAAAAAAApGOD6f////////7zmO9HOsp8///6zynv//////4z0f/////7z8/////4z///4z////95/wAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABwAAAAAA4AAAAAAOAAAAAAAAAAABvOAA="
+  const NOTIFICATION_SOUND = "public/sounds/notification-v2.mp3"
 
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)

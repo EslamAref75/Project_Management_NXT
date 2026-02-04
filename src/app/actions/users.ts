@@ -190,15 +190,101 @@ export async function deleteUser(id: number) {
     return handleAuthorizationError(error)
   }
 
-  try {
-    await prisma.user.delete({ where: { id } })
+  // Prevent self-deletion
+  if (parseInt(session.user.id) === id) {
+    return { error: "Cannot delete your own account", code: "SELF_DELETE" }
+  }
 
-    console.log(`[RBAC] User ${session.user.name || session.user.email} deleted user ${id}`)
+  try {
+    // Check for blocking dependencies
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        projectsManaged: {
+          where: {
+            NOT: { status: "completed" }
+          },
+          select: { id: true, name: true }
+        },
+        teamsLed: {
+          select: { id: true, name: true }
+        },
+      }
+    })
+
+    if (!user) {
+      return { error: "User not found", code: "NOT_FOUND" }
+    }
+
+    // Check if user is managing active projects
+    if (user.projectsManaged.length > 0) {
+      const projectNames = user.projectsManaged.map(p => p.name).join(", ")
+      return {
+        error: `Cannot delete: User is managing ${user.projectsManaged.length} active project(s) (${projectNames}). Please reassign the project manager first.`,
+        code: "HAS_ACTIVE_PROJECTS"
+      }
+    }
+
+    // Check if user is leading teams
+    if (user.teamsLed.length > 0) {
+      const teamNames = user.teamsLed.map(t => t.name).join(", ")
+      return {
+        error: `Cannot delete: User is leading ${user.teamsLed.length} team(s) (${teamNames}). Please reassign the team lead first.`,
+        code: "IS_TEAM_LEAD"
+      }
+    }
+
+    // Perform deletion with cleanup in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Nullify creator references for projects
+      await tx.project.updateMany({
+        where: { createdById: id },
+        data: { createdById: null }
+      })
+
+      // Nullify creator references for tasks
+      await tx.task.updateMany({
+        where: { createdById: id },
+        data: { createdById: null }
+      })
+
+      // Disconnect user from assigned tasks (many-to-many relationship)
+      const assignedTasks = await tx.task.findMany({
+        where: {
+          assignees: {
+            some: { id }
+          }
+        },
+        select: { id: true }
+      })
+
+      for (const task of assignedTasks) {
+        await tx.task.update({
+          where: { id: task.id },
+          data: {
+            assignees: {
+              disconnect: { id }
+            }
+          }
+        })
+      }
+
+      // Delete the user (cascade will handle related records like comments, notifications, etc.)
+      await tx.user.delete({ where: { id } })
+    })
+
+    console.log(`[RBAC] User ${id} deleted by ${session.user.name || session.user.email}`)
 
     revalidatePath("/dashboard/users")
+    revalidatePath("/dashboard/teams")
+
     return { success: true, code: "USER_DELETED" }
-  } catch (e) {
-    return { error: "Failed to delete user", code: "DELETE_FAILED" }
+  } catch (e: any) {
+    console.error("Delete user error:", e)
+    return {
+      error: `Failed to delete user: ${e.message || "Unknown error"}`,
+      code: "DELETE_FAILED"
+    }
   }
 }
 

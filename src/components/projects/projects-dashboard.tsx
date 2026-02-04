@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ProjectsSearchBar } from "./projects-search-bar"
@@ -66,6 +66,7 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users, stats 
     )
     const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"))
     const [limit] = useState(12)
+    const hasInitiallyMounted = useRef(false)
 
     // Load project types on mount
     useEffect(() => {
@@ -141,19 +142,26 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users, stats 
         }, 400)
 
         return () => clearTimeout(timer)
-    }, [searchQuery, fetchProjects, updateURLParams])
+    }, [searchQuery])
 
-    // Fetch when filters change
+    // Fetch when filters change (skip on initial mount)
     useEffect(() => {
-        setPage(1)
-        fetchProjects()
-        updateURLParams()
+        // Skip the initial mount - we already have initialProjects from SSR
+        if (hasInitiallyMounted.current) {
+            setPage(1)
+            fetchProjects()
+            updateURLParams()
+        } else {
+            hasInitiallyMounted.current = true
+        }
     }, [categoryFilter, statusFilter, priorityFilter, dateRange, projectManagerFilter, viewMode])
 
-    // Fetch when page changes
+    // Fetch when page changes (skip on initial mount)
     useEffect(() => {
-        fetchProjects()
-        updateURLParams()
+        if (hasInitiallyMounted.current && page !== 1) {
+            fetchProjects()
+            updateURLParams()
+        }
     }, [page])
 
     // Handle view mode change

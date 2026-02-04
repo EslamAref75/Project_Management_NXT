@@ -27,14 +27,10 @@ export function ProjectNotificationDropdown({
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-<<<<<<< HEAD
-  const previousNotificationIdsRef = useRef<Set<number>>(new Set())
-=======
   const previousIdsRef = useRef<Set<number>>(new Set())
   const hasLoadedRef = useRef(false)
 
   const POLL_INTERVAL_MS = 15000
->>>>>>> f16f92e7f395476aa51f79f9e533a94e23d1b987
 
   const playNotificationSound = async () => {
     try {
@@ -75,28 +71,10 @@ export function ProjectNotificationDropdown({
   }
 
   useEffect(() => {
-<<<<<<< HEAD
-    // Only run on client-side
-    if (typeof window === 'undefined') return
-
-    const fetchNotifications = async () => {
-      setLoading(true)
-      const result = await getProjectNotifications(projectId, {
-        limit: 15,
-        offset: 0,
-      })
-      if (result.success && result.notifications) {
-        // Check for new unread notifications using ref to avoid stale closure
-        const previousIds = previousNotificationIdsRef.current
-        const newUnread = result.notifications.filter(
-          (n) => !n.isRead && !previousIds.has(n.id)
-        )
-=======
     if (!isOpen) {
       setLoading(false)
       return
     }
->>>>>>> f16f92e7f395476aa51f79f9e533a94e23d1b987
 
     let isActive = true
     let timeoutId: ReturnType<typeof setTimeout> | null = null
@@ -148,23 +126,6 @@ export function ProjectNotificationDropdown({
           setLoading(false)
           hasLoadedRef.current = true
         }
-<<<<<<< HEAD
-
-        // Sort notifications: urgent first, then by date
-        const sorted = result.notifications.sort((a, b) => {
-          if (a.isUrgent && !b.isUrgent) return -1
-          if (!a.isUrgent && b.isUrgent) return 1
-          if (a.requiresAcknowledgment && !b.requiresAcknowledgment) return -1
-          if (!a.requiresAcknowledgment && b.requiresAcknowledgment) return 1
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        })
-
-        setNotifications(sorted)
-
-        // Update ref with current notification IDs
-        previousNotificationIdsRef.current = new Set(sorted.map(n => n.id))
-=======
->>>>>>> f16f92e7f395476aa51f79f9e533a94e23d1b987
       }
     }
 
@@ -186,13 +147,6 @@ export function ProjectNotificationDropdown({
     scheduleNext()
     document.addEventListener("visibilitychange", handleVisibilityChange)
 
-<<<<<<< HEAD
-    // Poll for new notifications every 30 seconds (reduced from 5s for better performance)
-    const interval = setInterval(fetchNotifications, 30000)
-
-    return () => clearInterval(interval)
-  }, [projectId])
-=======
     return () => {
       isActive = false
       if (timeoutId) {
@@ -201,7 +155,6 @@ export function ProjectNotificationDropdown({
       document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [projectId, isOpen])
->>>>>>> f16f92e7f395476aa51f79f9e533a94e23d1b987
 
   const handleMarkAsRead = async (notificationId: number) => {
     const result = await markProjectNotificationAsRead(projectId, notificationId)
