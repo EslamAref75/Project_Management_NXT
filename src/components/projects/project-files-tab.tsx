@@ -33,10 +33,6 @@ export function ProjectFilesTab({ project }: ProjectFilesTabProps) {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
 
-    useEffect(() => {
-        loadAttachments()
-    }, [project.id])
-
     const loadAttachments = async () => {
         setLoading(true)
         const result = await getProjectAttachments(project.id)
@@ -45,6 +41,10 @@ export function ProjectFilesTab({ project }: ProjectFilesTabProps) {
         }
         setLoading(false)
     }
+
+    useEffect(() => {
+        loadAttachments()
+    }, [project.id])
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
@@ -217,15 +217,15 @@ export function ProjectFilesTab({ project }: ProjectFilesTabProps) {
                                     </Button>
                                     {(attachment.uploadedById === parseInt(session?.user?.id || "0") ||
                                         session?.user?.role === "admin") && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleDelete(attachment.id)}
-                                            className="text-destructive hover:text-destructive"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    )}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDelete(attachment.id)}
+                                                className="text-destructive hover:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                 </div>
                             </div>
                         ))}

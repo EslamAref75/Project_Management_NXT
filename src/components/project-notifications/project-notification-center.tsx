@@ -45,10 +45,6 @@ export function ProjectNotificationCenter({
 
   const limit = 20
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [page, filters])
-
   const fetchNotifications = async () => {
     setLoading(true)
     const result = await getProjectNotifications(projectId, {
@@ -57,8 +53,8 @@ export function ProjectNotificationCenter({
         filters.isRead === "all"
           ? undefined
           : filters.isRead === "read"
-          ? true
-          : false,
+            ? true
+            : false,
       limit,
       offset: (page - 1) * limit,
     })
@@ -79,6 +75,10 @@ export function ProjectNotificationCenter({
     }
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [page, filters])
 
   const handleMarkAsRead = async (notificationId: number) => {
     const result = await markProjectNotificationAsRead(projectId, notificationId)
@@ -160,7 +160,7 @@ export function ProjectNotificationCenter({
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="task">Task</SelectItem>
                   <SelectItem value="dependency">Dependency</SelectItem>
-                  <SelectItem value="today_task">Today's Task</SelectItem>
+                  <SelectItem value="today_task">Today&apos;s Task</SelectItem>
                   <SelectItem value="project_admin">Project Admin</SelectItem>
                 </SelectContent>
               </Select>
@@ -229,9 +229,8 @@ export function ProjectNotificationCenter({
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
-                    !notification.isRead ? "bg-blue-50/50 border-blue-200" : ""
-                  }`}
+                  className={`p-4 border rounded-lg hover:bg-muted/50 transition-colors ${!notification.isRead ? "bg-blue-50/50 border-blue-200" : ""
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">

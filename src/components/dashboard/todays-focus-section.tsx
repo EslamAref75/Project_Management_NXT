@@ -68,7 +68,7 @@ export function TodaysFocusSection({ tasks, isAdmin = false }: TodaysFocusSectio
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Today's Focus</CardTitle>
+                    <CardTitle>Today&apos;s Focus</CardTitle>
                     <CardDescription>Your tasks scheduled for today</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -88,7 +88,7 @@ export function TodaysFocusSection({ tasks, isAdmin = false }: TodaysFocusSectio
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle>Today's Focus</CardTitle>
+                        <CardTitle>Today&apos;s Focus</CardTitle>
                         <CardDescription>
                             {tasks.length} task{tasks.length !== 1 ? "s" : ""} scheduled for today
                         </CardDescription>

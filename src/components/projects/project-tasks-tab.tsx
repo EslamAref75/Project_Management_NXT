@@ -53,7 +53,7 @@ export function ProjectTasksTab({ project, users }: ProjectTasksTabProps) {
     const tasks = project.tasks || []
 
     // Filter tasks
-    let filteredTasks = tasks.filter((task: any) => {
+    const filteredTasks = tasks.filter((task: any) => {
         if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) {
             return false
         }

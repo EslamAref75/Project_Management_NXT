@@ -150,14 +150,14 @@ export function TasksTableView({
         low: "bg-gray-500/10 text-gray-500 border-gray-500/20",
     }
 
-    const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    const renderSortButton = (field: SortField, label: string) => (
         <Button
             variant="ghost"
             size="sm"
             className="h-8 data-[state=open]:bg-accent"
             onClick={() => handleSort(field)}
         >
-            {children}
+            {label}
             {sortField === field ? (
                 sortDirection === "asc" ? (
                     <ArrowUp className="ml-2 h-4 w-4" />
@@ -188,22 +188,22 @@ export function TasksTableView({
                     <TableHeader>
                         <TableRow>
                             <TableHead>
-                                <SortButton field="title">Task Name</SortButton>
+                                {renderSortButton("title", "Task Name")}
                             </TableHead>
                             <TableHead>
-                                <SortButton field="project">Project</SortButton>
+                                {renderSortButton("project", "Project")}
                             </TableHead>
                             <TableHead>
-                                <SortButton field="assignee">Assignee</SortButton>
+                                {renderSortButton("assignee", "Assignee")}
                             </TableHead>
                             <TableHead>
-                                <SortButton field="status">Status</SortButton>
+                                {renderSortButton("status", "Status")}
                             </TableHead>
                             <TableHead>
-                                <SortButton field="priority">Priority</SortButton>
+                                {renderSortButton("priority", "Priority")}
                             </TableHead>
                             <TableHead>
-                                <SortButton field="dueDate">Due Date</SortButton>
+                                {renderSortButton("dueDate", "Due Date")}
                             </TableHead>
                             <TableHead>Dependencies</TableHead>
                             <TableHead>Forecast</TableHead>

@@ -96,7 +96,7 @@ export function TasksManagementPage({ users, teams, initialCounts = {} }: TasksM
             (user.team && user.team.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
         // Team filter
-        const matchesTeam = selectedTeamId === "all" || 
+        const matchesTeam = selectedTeamId === "all" ||
             (selectedTeamId === "none" && !user.team) ||
             (user.team && user.team.id.toString() === selectedTeamId)
 
@@ -106,13 +106,13 @@ export function TasksManagementPage({ users, teams, initialCounts = {} }: TasksM
     // Filter projects based on search
     const filteredProjects = projects.filter((project: any) => {
         if (searchQuery === "") return true
-        
+
         const query = searchQuery.toLowerCase()
         const matchesName = project.name?.toLowerCase().includes(query) || false
-        
+
         const matchesTask = (project.todayTasks || []).some((task: any) =>
             task.title?.toLowerCase().includes(query) ||
-            (task.assignees || []).some((a: any) => 
+            (task.assignees || []).some((a: any) =>
                 a.username?.toLowerCase().includes(query) ||
                 a.email?.toLowerCase().includes(query)
             )
@@ -158,7 +158,7 @@ export function TasksManagementPage({ users, teams, initialCounts = {} }: TasksM
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight">Today's Tasks Management</h2>
+                        <h2 className="text-3xl font-bold tracking-tight">Today&apos;s Tasks Management</h2>
                         <p className="text-muted-foreground mt-1">
                             Manage daily tasks for all users
                         </p>
@@ -170,8 +170,8 @@ export function TasksManagementPage({ users, teams, initialCounts = {} }: TasksM
                             onChange={(e) => setSelectedDate(e.target.value)}
                             className="w-[160px]"
                         />
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             size="icon"
                             onClick={handleRefresh}
                             disabled={loading || isPending}

@@ -56,22 +56,6 @@ export function TeamUserReports({ userId, userRole }: TeamUserReportsProps) {
         end: new Date(),
     })
 
-    useEffect(() => {
-        if (userRole !== "admin") {
-            setError("Unauthorized: Admin access required")
-            setLoading(false)
-            return
-        }
-
-        loadInitialData()
-    }, [userRole])
-
-    useEffect(() => {
-        if (userRole === "admin") {
-            fetchData()
-        }
-    }, [userFilter, projectFilter, dateRange])
-
     const loadInitialData = async () => {
         const [usersResult, projectsResult] = await Promise.all([
             getUsers(),
@@ -99,6 +83,22 @@ export function TeamUserReports({ userId, userRole }: TeamUserReportsProps) {
         }
         setLoading(false)
     }
+
+    useEffect(() => {
+        if (userRole !== "admin") {
+            setError("Unauthorized: Admin access required")
+            setLoading(false)
+            return
+        }
+
+        loadInitialData()
+    }, [userRole])
+
+    useEffect(() => {
+        if (userRole === "admin") {
+            fetchData()
+        }
+    }, [userFilter, projectFilter, dateRange])
 
     const exportToCSV = () => {
         if (!data) return

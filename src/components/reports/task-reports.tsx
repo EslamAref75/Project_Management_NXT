@@ -38,10 +38,6 @@ export function TaskReports({ userId, userRole }: TaskReportsProps) {
 
     const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>({})
 
-    useEffect(() => {
-        fetchData()
-    }, [dateRange])
-
     const fetchData = async () => {
         setLoading(true)
         setError(null)
@@ -56,6 +52,10 @@ export function TaskReports({ userId, userRole }: TaskReportsProps) {
         }
         setLoading(false)
     }
+
+    useEffect(() => {
+        fetchData()
+    }, [dateRange])
 
     const exportToCSV = () => {
         if (!data) return

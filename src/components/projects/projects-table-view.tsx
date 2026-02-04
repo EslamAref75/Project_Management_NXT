@@ -114,14 +114,14 @@ export function ProjectsTableView({
 
     const totalPages = Math.ceil(total / limit)
 
-    const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    const renderSortButton = (field: SortField, label: string) => (
         <Button
             variant="ghost"
             size="sm"
             className="h-8 data-[state=open]:bg-accent"
             onClick={() => handleSort(field)}
         >
-            {children}
+            {label}
             {sortField === field ? (
                 sortDirection === "asc" ? (
                     <ArrowUp className="ml-2 h-4 w-4" />
@@ -152,20 +152,20 @@ export function ProjectsTableView({
                     <TableHeader>
                         <TableRow>
                             <TableHead>
-                                <SortButton field="name">Project Name</SortButton>
+                                {renderSortButton("name", "Project Name")}
                             </TableHead>
                             <TableHead>Category</TableHead>
                             <TableHead>
-                                <SortButton field="status">Status</SortButton>
+                                {renderSortButton("status", "Status")}
                             </TableHead>
                             <TableHead>
-                                <SortButton field="progress">Progress</SortButton>
+                                {renderSortButton("progress", "Progress")}
                             </TableHead>
                             <TableHead>
-                                <SortButton field="startDate">Start Date</SortButton>
+                                {renderSortButton("startDate", "Start Date")}
                             </TableHead>
                             <TableHead>
-                                <SortButton field="endDate">End Date</SortButton>
+                                {renderSortButton("endDate", "End Date")}
                             </TableHead>
                             <TableHead>Project Manager</TableHead>
                             <TableHead>Tasks</TableHead>

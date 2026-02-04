@@ -46,14 +46,6 @@ export function TodaysReports({ userId, userRole }: TodaysReportsProps) {
     const [userFilter, setUserFilter] = useState<string>("all")
     const [projectFilter, setProjectFilter] = useState<string>("all")
 
-    useEffect(() => {
-        loadInitialData()
-    }, [])
-
-    useEffect(() => {
-        fetchData()
-    }, [selectedDate, userFilter, projectFilter])
-
     const loadInitialData = async () => {
         const [usersResult, projectsResult] = await Promise.all([
             getUsers(),
@@ -80,6 +72,14 @@ export function TodaysReports({ userId, userRole }: TodaysReportsProps) {
         }
         setLoading(false)
     }
+
+    useEffect(() => {
+        loadInitialData()
+    }, [])
+
+    useEffect(() => {
+        fetchData()
+    }, [selectedDate, userFilter, projectFilter])
 
     const exportToCSV = () => {
         if (!data) return
@@ -285,7 +285,7 @@ export function TodaysReports({ userId, userRole }: TodaysReportsProps) {
             {/* Tasks List */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Today's Tasks</CardTitle>
+                    <CardTitle>Today&apos;s Tasks</CardTitle>
                     <CardDescription>
                         All tasks planned for {format(selectedDate, "MMMM d, yyyy")}
                     </CardDescription>

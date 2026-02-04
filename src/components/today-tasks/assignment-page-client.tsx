@@ -56,7 +56,7 @@ export function AssignmentPageClient({ users }: AssignmentPageClientProps) {
                                         Managing tasks for {selectedUser?.username}
                                     </h3>
                                     <p className="text-muted-foreground max-w-md">
-                                        Use the assignment modal to manage this user's today's tasks.
+                                        Use the assignment modal to manage this user&apos;s today&apos;s tasks.
                                     </p>
                                 </div>
                             </div>
@@ -68,8 +68,8 @@ export function AssignmentPageClient({ users }: AssignmentPageClientProps) {
                                         Select a User to Manage Tasks
                                     </h3>
                                     <p className="text-muted-foreground max-w-md">
-                                        Click on a user from the panel on the left to assign and manage their today's tasks.
-                                        You can filter by project and move tasks between available and today's focus.
+                                        Click on a user from the panel on the left to assign and manage their today&apos;s tasks.
+                                        You can filter by project and move tasks between available and today&apos;s focus.
                                     </p>
                                 </div>
                             </div>

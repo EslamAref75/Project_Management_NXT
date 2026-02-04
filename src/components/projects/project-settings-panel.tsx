@@ -15,9 +15,9 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { 
-    updateProjectSetting, 
-    resetProjectSetting 
+import {
+    updateProjectSetting,
+    resetProjectSetting
 } from "@/app/actions/project-settings"
 import { useTransition } from "react"
 import { Loader2, Save, RotateCcw } from "lucide-react"
@@ -106,7 +106,7 @@ export function ProjectSettingsPanel({
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="tasks">Tasks</TabsTrigger>
                 <TabsTrigger value="dependencies">Dependencies</TabsTrigger>
-                <TabsTrigger value="today_tasks">Today's Tasks</TabsTrigger>
+                <TabsTrigger value="today_tasks">Today&apos;s Tasks</TabsTrigger>
                 <TabsTrigger value="workflow">Workflow</TabsTrigger>
                 <TabsTrigger value="permissions">Permissions</TabsTrigger>
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -151,7 +151,7 @@ export function ProjectSettingsPanel({
                 />
             </TabsContent>
 
-            {/* Today's Tasks */}
+            {/* Today&apos;s Tasks */}
             <TabsContent value="today_tasks">
                 <TodayTasksSettings
                     projectId={projectId}
@@ -593,7 +593,7 @@ function DependencySettings({ projectId, setting, resolvedValue, isOverrideEnabl
     )
 }
 
-// Today's Tasks Settings Component
+// Today&apos;s Tasks Settings Component
 function TodayTasksSettings({ projectId, setting, resolvedValue, isOverrideEnabled, onSave, onReset, isPending }: any) {
     const [allowOverride, setAllowOverride] = useState(isOverrideEnabled)
     const [enableTodayTasks, setEnableTodayTasks] = useState(setting?.value?.enableTodayTasks ?? resolvedValue?.enableTodayTasks ?? true)
@@ -619,7 +619,7 @@ function TodayTasksSettings({ projectId, setting, resolvedValue, isOverrideEnabl
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle>Today's Tasks Rules</CardTitle>
+                        <CardTitle>Today&apos;s Tasks Rules</CardTitle>
                         <CardDescription>Configure daily focus task behavior for this project</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
@@ -634,8 +634,8 @@ function TodayTasksSettings({ projectId, setting, resolvedValue, isOverrideEnabl
             <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                        <Label>Enable Today's Tasks</Label>
-                        <p className="text-sm text-muted-foreground">Allow Today's Tasks for this project</p>
+                        <Label>Enable Today&apos;s Tasks</Label>
+                        <p className="text-sm text-muted-foreground">Allow Today&apos;s Tasks for this project</p>
                     </div>
                     <Switch
                         checked={enableTodayTasks}
@@ -645,7 +645,7 @@ function TodayTasksSettings({ projectId, setting, resolvedValue, isOverrideEnabl
                 </div>
 
                 <div className="space-y-2">
-                    <Label>Maximum Today's Tasks Per User</Label>
+                    <Label>Maximum Today&apos;s Tasks Per User</Label>
                     <Input
                         type="number"
                         min="0"
@@ -684,7 +684,7 @@ function TodayTasksSettings({ projectId, setting, resolvedValue, isOverrideEnabl
                 <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                         <Label>Exclude Blocked Tasks</Label>
-                        <p className="text-sm text-muted-foreground">Don't include blocked tasks in Today's Tasks</p>
+                        <p className="text-sm text-muted-foreground">Don&apos;t include blocked tasks in Today&apos;s Tasks</p>
                     </div>
                     <Switch
                         checked={excludeBlockedTasks}
@@ -898,7 +898,7 @@ function NotificationsSettings({ projectId, setting, resolvedValue, isOverrideEn
 
                 <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                        <Label>Notify on Today's Task Assignment</Label>
+                        <Label>Notify on Today&apos;s Task Assignment</Label>
                     </div>
                     <Switch
                         checked={notifyOnTodayTaskAssignment}

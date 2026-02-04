@@ -116,7 +116,7 @@ export async function getProgressReport(params: ReportParams): Promise<ProgressR
         }
 
         // 3. Data Fetching
-        let whereClause: any = {}
+        const whereClause: any = {}
         if (params.entityType === 'project') whereClause.projectId = params.entityId
         if (params.entityType === 'team') whereClause.teamId = params.entityId
         if (params.entityType === 'user') whereClause.assignees = { some: { id: params.entityId } }
@@ -140,7 +140,7 @@ export async function getProgressReport(params: ReportParams): Promise<ProgressR
         ])
 
         // 4. KPI Calculation Helper
-        // eslint-disable-next-line no-unused-vars
+         
         const calculateMetrics = (tasks: typeof tasksA, period: Period) => {
             // Velocity: Sum of estimatedHours for tasks completed within the period
             const completedInPeriod = tasks.filter(t =>

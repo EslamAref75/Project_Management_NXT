@@ -82,22 +82,6 @@ export function ActivityReports({ userId, userRole }: ActivityReportsProps) {
     const [page, setPage] = useState(1)
     const limit = 50
 
-    useEffect(() => {
-        if (userRole !== "admin") {
-            setError("Unauthorized: Admin access required")
-            setLoading(false)
-            return
-        }
-
-        loadInitialData()
-    }, [userRole])
-
-    useEffect(() => {
-        if (userRole === "admin") {
-            fetchData()
-        }
-    }, [userFilter, actionTypeFilter, entityTypeFilter, dateRange, page])
-
     const loadInitialData = async () => {
         const usersResult = await getUsers()
         setUsers(usersResult)
@@ -124,6 +108,22 @@ export function ActivityReports({ userId, userRole }: ActivityReportsProps) {
         }
         setLoading(false)
     }
+
+    useEffect(() => {
+        if (userRole !== "admin") {
+            setError("Unauthorized: Admin access required")
+            setLoading(false)
+            return
+        }
+
+        loadInitialData()
+    }, [userRole])
+
+    useEffect(() => {
+        if (userRole === "admin") {
+            fetchData()
+        }
+    }, [userFilter, actionTypeFilter, entityTypeFilter, dateRange, page])
 
     const exportToCSV = () => {
         if (!data) return

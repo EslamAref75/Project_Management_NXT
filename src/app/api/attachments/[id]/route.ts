@@ -10,7 +10,7 @@
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { join } from "path"
+import { join, resolve } from "path"
 import { existsSync, readFileSync } from "fs"
 
 export async function GET(
@@ -95,8 +95,8 @@ export async function GET(
 
     // Security: Verify the path is within the uploads directory
     const uploadsDir = join(process.cwd(), "public", "uploads")
-    const resolvedPath = require("path").resolve(filePath)
-    const resolvedUploadsDir = require("path").resolve(uploadsDir)
+    const resolvedPath = resolve(filePath)
+    const resolvedUploadsDir = resolve(uploadsDir)
 
     if (!resolvedPath.startsWith(resolvedUploadsDir)) {
       return new Response("Forbidden - Invalid file path", {

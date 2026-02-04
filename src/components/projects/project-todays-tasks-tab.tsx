@@ -26,7 +26,7 @@ export function ProjectTodaysTasksTab({ project, users }: ProjectTodaysTasksTabP
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle>Today's Tasks</CardTitle>
+                        <CardTitle>Today&apos;s Tasks</CardTitle>
                         <CardDescription>
                             Daily focus tasks for this project
                         </CardDescription>
@@ -34,7 +34,7 @@ export function ProjectTodaysTasksTab({ project, users }: ProjectTodaysTasksTabP
                     <Button asChild>
                         <Link href="/dashboard/today-tasks-assignment">
                             <Plus className="h-4 w-4 mr-2" />
-                            Manage Today's Tasks
+                            Manage Today&apos;s Tasks
                         </Link>
                     </Button>
                 </div>
@@ -63,10 +63,10 @@ export function ProjectTodaysTasksTab({ project, users }: ProjectTodaysTasksTabP
                 <div className="text-center py-12 border border-dashed rounded-lg">
                     <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">
-                        Today's Tasks view for this project
+                        Today&apos;s Tasks view for this project
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
-                        Use the "Manage Today's Tasks" button to assign tasks
+                        Use the &quot;Manage Today&apos;s Tasks&quot; button to assign tasks
                     </p>
                 </div>
             </CardContent>

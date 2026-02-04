@@ -14,8 +14,8 @@ export async function predictTaskCompletion(taskId: number) {
 
     // RULE 1: Historical Velocity
     // Calculate average metrics for the assignees
-    let avgDailyVelocity = 0; // Tasks per day
-    let totalCompleted = 0;
+    const avgDailyVelocity = 0; // Tasks per day
+    const totalCompleted = 0;
 
     // Default to 1 task/day if no history (or 1 / estimatedHours if available)
     let defaultTime = task.estimatedHours > 0 ? task.estimatedHours / 8 : 1; // Days

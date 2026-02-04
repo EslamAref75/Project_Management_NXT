@@ -52,14 +52,6 @@ export function ProjectReports({ userId, userRole }: ProjectReportsProps) {
     const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>({})
     const [projectManagerFilter, setProjectManagerFilter] = useState<string>("all")
 
-    useEffect(() => {
-        loadInitialData()
-    }, [])
-
-    useEffect(() => {
-        fetchReports()
-    }, [projectFilter, categoryFilter, statusFilter, dateRange, projectManagerFilter])
-
     const loadInitialData = async () => {
         const [projectsResult, usersResult] = await Promise.all([
             getAllProjects(),
@@ -90,6 +82,14 @@ export function ProjectReports({ userId, userRole }: ProjectReportsProps) {
         }
         setLoading(false)
     }
+
+    useEffect(() => {
+        loadInitialData()
+    }, [])
+
+    useEffect(() => {
+        fetchReports()
+    }, [projectFilter, categoryFilter, statusFilter, dateRange, projectManagerFilter])
 
     const handleDateRangeChange = (range: DateRange | undefined) => {
         setDateRange({
