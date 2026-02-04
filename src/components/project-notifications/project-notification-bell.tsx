@@ -11,15 +11,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { getProjectUnreadNotificationCount } from "@/app/actions/project-notifications"
 import { ProjectNotificationDropdown } from "./project-notification-dropdown"
+import { playNotificationSound } from "@/lib/notification-sound"
 
 interface ProjectNotificationBellProps {
   projectId: number
 }
 
 export function ProjectNotificationBell({ projectId }: ProjectNotificationBellProps) {
-  // Simple notification sound (short beep/bell)
-  const NOTIFICATION_SOUND = "public/sounds/notification-v2.mp3"
-
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const prevCountRef = useRef(0)
@@ -41,12 +39,7 @@ export function ProjectNotificationBell({ projectId }: ProjectNotificationBellPr
         // Play sound if count increased and it's not the initial load (prevCount > 0 or handled differently)
         // logic: if new count > old count, and old count was tracked (or just simple increase)
         if (result.count > prevCountRef.current) {
-          try {
-            const audio = new Audio(NOTIFICATION_SOUND)
-            audio.play().catch(e => console.error("Error playing notification sound:", e))
-          } catch (e) {
-            console.error("Audio error:", e)
-          }
+          void playNotificationSound()
         }
 
         setUnreadCount(result.count)
