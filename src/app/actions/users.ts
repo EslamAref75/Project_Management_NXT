@@ -209,6 +209,9 @@ export async function deleteUser(id: number) {
         teamsLed: {
           select: { id: true, name: true }
         },
+        timeLogs: { select: { id: true }, take: 1 },
+        comments: { select: { id: true }, take: 1 },
+        uploadedFiles: { select: { id: true }, take: 1 },
       }
     })
 
@@ -234,21 +237,40 @@ export async function deleteUser(id: number) {
       }
     }
 
+    // Check for critical history that blocks deletion
+    if (user.timeLogs.length > 0 || user.comments.length > 0 || user.uploadedFiles.length > 0) {
+      return {
+        error: "Cannot delete: User has associated history (Time Logs, Comments, or Files). Please deactivate the user instead to preserve data integrity.",
+        code: "HAS_HISTORY"
+      }
+    }
+
     // Perform deletion with cleanup in a transaction
     await prisma.$transaction(async (tx) => {
-      // Nullify creator references for projects
+      // 1. Resolve optional links (ActivityLog) - these don't strictly require user existence
+      await tx.activityLog.updateMany({
+        where: { performedById: id },
+        data: { performedById: null }
+      })
+
+      await tx.activityLog.updateMany({
+        where: { affectedUserId: id },
+        data: { affectedUserId: null }
+      })
+
+      // 2. Nullify creator references for projects
       await tx.project.updateMany({
         where: { createdById: id },
         data: { createdById: null }
       })
 
-      // Nullify creator references for tasks
+      // 3. Nullify creator references for tasks
       await tx.task.updateMany({
         where: { createdById: id },
         data: { createdById: null }
       })
 
-      // Disconnect user from assigned tasks (many-to-many relationship)
+      // 4. Disconnect user from assigned tasks (many-to-many)
       const assignedTasks = await tx.task.findMany({
         where: {
           assignees: {
@@ -269,7 +291,18 @@ export async function deleteUser(id: number) {
         })
       }
 
-      // Delete the user (cascade will handle related records like comments, notifications, etc.)
+      // 5. Clean up other many-to-many or cleanup-safe relations
+      // Remove from teams
+      await tx.teamMember.deleteMany({
+        where: { userId: id }
+      })
+
+      // Remove from project teams
+      await tx.projectUser.deleteMany({
+        where: { userId: id }
+      })
+
+      // 6. Delete the user
       await tx.user.delete({ where: { id } })
     })
 
@@ -281,10 +314,51 @@ export async function deleteUser(id: number) {
     return { success: true, code: "USER_DELETED" }
   } catch (e: any) {
     console.error("Delete user error:", e)
+    // Check for foreign key constraint violation
+    if (e.code === 'P2003') {
+      return {
+        error: "Cannot delete user due to existing database dependencies (Foreign Key). Please deactivate instead.",
+        code: "HAS_HISTORY" // Treat as history blocking
+      }
+    }
+
     return {
       error: `Failed to delete user: ${e.message || "Unknown error"}`,
       code: "DELETE_FAILED"
     }
+  }
+}
+
+export async function toggleUserStatus(id: number, isActive: boolean) {
+  const session = await getServerSession(authOptions)
+  if (!session) return { error: "Unauthorized", code: "UNAUTHORIZED" }
+
+  try {
+    await requirePermission(parseInt(session.user.id), "user.update")
+  } catch (error: any) {
+    return handleAuthorizationError(error)
+  }
+
+  // Prevent self-deactivation
+  if (parseInt(session.user.id) === id && !isActive) {
+    return { error: "Cannot deactivate your own account", code: "SELF_DEACTIVATE" }
+  }
+
+  try {
+    const user = await prisma.user.update({
+      where: { id },
+      data: { isActive },
+    })
+
+    console.log(
+      `[RBAC] User ${session.user.name || session.user.email} ${isActive ? "activated" : "deactivated"} user ${user.username}`
+    )
+
+    revalidatePath("/dashboard/users")
+    return { success: true, code: isActive ? "USER_ACTIVATED" : "USER_DEACTIVATED" }
+  } catch (e) {
+    console.error("Toggle status error:", e)
+    return { error: "Failed to update user status", code: "UPDATE_FAILED" }
   }
 }
 

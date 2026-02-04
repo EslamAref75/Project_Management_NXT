@@ -9,7 +9,11 @@ export async function playNotificationSound() {
         const audio = new Audio(NOTIFICATION_SOUND_SRC)
         audio.preload = "auto"
         await audio.play()
-    } catch (error) {
+    } catch (error: any) {
+        // Ignore NotAllowedError which happens if user hasn't interacted with the document yet
+        if (error?.name === "NotAllowedError") {
+            return
+        }
         console.error("Error playing notification sound:", error)
     }
 }
