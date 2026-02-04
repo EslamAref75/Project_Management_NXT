@@ -225,36 +225,6 @@ async function main() {
       passwordHash: defaultPassword,
       role: 'admin',
     },
-    {
-      username: 'pm1',
-      email: 'pm1@example.com',
-      passwordHash: defaultPassword,
-      role: 'project_manager',
-    },
-    {
-      username: 'dev1',
-      email: 'dev1@example.com',
-      passwordHash: defaultPassword,
-      role: 'developer',
-    },
-    {
-      username: 'dev2',
-      email: 'dev2@example.com',
-      passwordHash: defaultPassword,
-      role: 'developer',
-    },
-    {
-      username: 'dev3',
-      email: 'dev3@example.com',
-      passwordHash: defaultPassword,
-      role: 'developer',
-    },
-    {
-      username: 'viewer1',
-      email: 'viewer1@example.com',
-      passwordHash: defaultPassword,
-      role: 'viewer',
-    },
   ]
 
   const createdUsers = []
@@ -289,17 +259,17 @@ async function main() {
     {
       name: 'Frontend Team',
       description: 'Frontend development team',
-      teamLeadId: createdUsers.find((u) => u.username === 'dev1')?.id,
+      teamLeadId: createdUsers.find((u) => u.username === 'admin')?.id,
     },
     {
       name: 'Backend Team',
       description: 'Backend development team',
-      teamLeadId: createdUsers.find((u) => u.username === 'dev2')?.id,
+      teamLeadId: createdUsers.find((u) => u.username === 'admin')?.id,
     },
     {
       name: 'Full Stack Team',
       description: 'Full stack development team',
-      teamLeadId: createdUsers.find((u) => u.username === 'pm1')?.id,
+      teamLeadId: createdUsers.find((u) => u.username === 'admin')?.id,
     },
   ]
 
@@ -321,29 +291,13 @@ async function main() {
   }
 
   // Add additional developers to teams (team leads are already added above)
-  const dev1 = createdUsers.find((u) => u.username === 'dev1')!
-  const dev2 = createdUsers.find((u) => u.username === 'dev2')!
-  const dev3 = createdUsers.find((u) => u.username === 'dev3')!
-  const pm1 = createdUsers.find((u) => u.username === 'pm1')!
+  const admin = createdUsers.find((u) => u.username === 'admin')!
 
-  // Frontend Team (teamLead: dev1) - add dev3 as member
-  if (createdTeams[0]) {
-    await prisma.teamMember.create({
-      data: { teamId: createdTeams[0].id, userId: dev3.id, role: 'member' },
-    })
-  }
-
-  // Backend Team (teamLead: dev2) - no additional members needed
-
-  // Full Stack Team (teamLead: pm1) - add dev1 and dev2 as members
-  if (createdTeams[2]) {
-    await prisma.teamMember.create({
-      data: { teamId: createdTeams[2].id, userId: dev1.id, role: 'member' },
-    })
-    await prisma.teamMember.create({
-      data: { teamId: createdTeams[2].id, userId: dev2.id, role: 'member' },
-    })
-  }
+  // Map removed users to admin to maintain seed logic without rewriting everything
+  const dev1 = admin
+  const dev2 = admin
+  const dev3 = admin
+  const pm1 = admin
 
   console.log(`✅ Created ${createdTeams.length} teams\n`)
 
@@ -367,7 +321,6 @@ async function main() {
 
   // 10. Seed Projects
   console.log('📦 Seeding Projects...')
-  const admin = createdUsers.find((u) => u.username === 'admin')!
 
   const projects = [
     {
@@ -862,7 +815,7 @@ async function main() {
   // 21. Seed Project Notification Preferences
   console.log('🔔 Seeding Project Notification Preferences...')
   for (const project of createdProjects) {
-    for (const user of [pm1, dev1, dev2]) {
+    for (const user of [admin]) {
       await prisma.projectNotificationPreference.create({
         data: {
           projectId: project.id,
@@ -908,7 +861,7 @@ async function main() {
   // 23. Seed Project Notifications
   console.log('🔔 Seeding Project Notifications...')
   for (const project of createdProjects.slice(0, 2)) {
-    for (const user of [pm1, dev1]) {
+    for (const user of [admin]) {
       await prisma.projectNotification.create({
         data: {
           projectId: project.id,
