@@ -102,10 +102,7 @@ pids
 .parcel-cache
 
 # Next.js
-.next
-out
-build
-dist
+
 
 # Turbo
 .turbo
