@@ -1,0 +1,215 @@
+{
+  "node": {
+    "0033db22356cbf8845a3517099b63dfc38d1147299": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getPublicSystemSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getPublicSystemSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+    },
+    "00686a7231b739e4fe9b8305b757bc0e83827b9865": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getAllProjectsUnreadNotificationCount",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsUnreadNotificationCount",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "4004a0aae390e2c1aeb900c79065f312ac43d90f8d": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getAllProjectsNotifications",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsNotifications",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "60691655a7ad6aec29ab9691d8571a0d380be93da1": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "markProjectNotificationAsRead",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "markProjectNotificationAsRead",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "406484f4f706f63530be79074d5b12dcb1b385ded1": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getOverviewReports",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getOverviewReports",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+    },
+    "4098ad2bdd8073130c7e76c7023ab783f516d336a0": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getProjectReports",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getProjectReports",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+    },
+    "003ae2a452e6e1e8ebee86f206a9903396d5df13b8": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getProjects",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getProjects",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+    },
+    "0078a5996050e1da89a66893bd05780e75185392cb": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getUsers",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/users.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getUsers",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/users.ts"
+    },
+    "40e4bb39ff97cebfb3d7d51d275e06550fb05094b7": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getTaskReports",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getTaskReports",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+    },
+    "40fdf1940fc18692e48c4caf9673b19168e6cc2232": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getTodaysReports",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getTodaysReports",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+    },
+    "00da921d2d632ba7e89405e47535a513abac90089f": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getProjects",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getProjects",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+    },
+    "406e9d86129fdcaa2c59294a7d823ec24dad2dbb70": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getTeamUserReports",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getTeamUserReports",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+    },
+    "4027ee99637e70a11e6d008b17e9c6ade5d63f5e91": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getActivityReports",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getActivityReports",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/reports.ts"
+    },
+    "40cb366c952aa9f33058dfcd245b147872e9dc1a09": {
+      "workers": {
+        "app/dashboard/reports/page": {
+          "moduleId": 898299,
+          "async": false,
+          "exportedName": "getProgressReport",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/progress-report.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/reports/page": "action-browser"
+      },
+      "exportedName": "getProgressReport",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/progress-report.ts"
+    }
+  },
+  "edge": {}
+}

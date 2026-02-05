@@ -1,0 +1,20 @@
+{
+  "node": {
+    "0033db22356cbf8845a3517099b63dfc38d1147299": {
+      "workers": {
+        "app/page": {
+          "moduleId": 640135,
+          "async": false,
+          "exportedName": "getPublicSystemSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/page": "action-browser"
+      },
+      "exportedName": "getPublicSystemSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+    }
+  },
+  "edge": {}
+}

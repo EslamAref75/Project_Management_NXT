@@ -1,0 +1,76 @@
+{
+  "app": {
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/_not-found/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/admin/activity-logs/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/admin/roles/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/focus/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/projects/[id]/notifications/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/projects/[id]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/projects/[id]/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/projects/[id]/tasks/[taskId]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/projects/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/reports/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/reports/progress/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/settings/projects/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/tasks/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/teams/[id]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/teams/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/today-tasks-assignment/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/users/[id]/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/dashboard/users/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/nxt/New folder/Project_Management_NXT/src/app/register/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

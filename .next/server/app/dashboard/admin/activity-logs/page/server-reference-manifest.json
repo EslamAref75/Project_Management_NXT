@@ -1,0 +1,80 @@
+{
+  "node": {
+    "0033db22356cbf8845a3517099b63dfc38d1147299": {
+      "workers": {
+        "app/dashboard/admin/activity-logs/page": {
+          "moduleId": 450933,
+          "async": false,
+          "exportedName": "getPublicSystemSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/admin/activity-logs/page": "action-browser"
+      },
+      "exportedName": "getPublicSystemSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+    },
+    "00686a7231b739e4fe9b8305b757bc0e83827b9865": {
+      "workers": {
+        "app/dashboard/admin/activity-logs/page": {
+          "moduleId": 450933,
+          "async": false,
+          "exportedName": "getAllProjectsUnreadNotificationCount",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/admin/activity-logs/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsUnreadNotificationCount",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "4004a0aae390e2c1aeb900c79065f312ac43d90f8d": {
+      "workers": {
+        "app/dashboard/admin/activity-logs/page": {
+          "moduleId": 450933,
+          "async": false,
+          "exportedName": "getAllProjectsNotifications",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/admin/activity-logs/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsNotifications",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "60691655a7ad6aec29ab9691d8571a0d380be93da1": {
+      "workers": {
+        "app/dashboard/admin/activity-logs/page": {
+          "moduleId": 450933,
+          "async": false,
+          "exportedName": "markProjectNotificationAsRead",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/admin/activity-logs/page": "action-browser"
+      },
+      "exportedName": "markProjectNotificationAsRead",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "404fd7d1c33d728683f2bb688d48969be05c615525": {
+      "workers": {
+        "app/dashboard/admin/activity-logs/page": {
+          "moduleId": 450933,
+          "async": false,
+          "exportedName": "getActivityLogs",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/activity-logs.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/admin/activity-logs/page": "action-browser"
+      },
+      "exportedName": "getActivityLogs",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/activity-logs.ts"
+    }
+  },
+  "edge": {}
+}

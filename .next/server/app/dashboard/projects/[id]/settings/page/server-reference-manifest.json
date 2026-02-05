@@ -1,0 +1,275 @@
+{
+  "node": {
+    "0033db22356cbf8845a3517099b63dfc38d1147299": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getPublicSystemSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "action-browser"
+      },
+      "exportedName": "getPublicSystemSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+    },
+    "00686a7231b739e4fe9b8305b757bc0e83827b9865": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getAllProjectsUnreadNotificationCount",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsUnreadNotificationCount",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "4004a0aae390e2c1aeb900c79065f312ac43d90f8d": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getAllProjectsNotifications",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsNotifications",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "60691655a7ad6aec29ab9691d8571a0d380be93da1": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "markProjectNotificationAsRead",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "action-browser"
+      },
+      "exportedName": "markProjectNotificationAsRead",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "003ae2a452e6e1e8ebee86f206a9903396d5df13b8": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getProjects",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "getProjects",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+    },
+    "401e3f4be30a5d5dbee04214aa788c798e018c4c21": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "createProject",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "createProject",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+    },
+    "402c9fcdaf734573eeb364d1e92aac14ecf31bcfb9": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getProject",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "getProject",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+    },
+    "406144e6cbbfbe91083d4680cc56756da14a65698a": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getProjectsWithFilters",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "getProjectsWithFilters",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+    },
+    "40fdba31998d7a3efe7c944c688cf93002e917af7b": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "deleteProject",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "deleteProject",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+    },
+    "601c00162e3e64028c2b657a9e3982df01dad141d5": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "updateProject",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "updateProject",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/projects.ts"
+    },
+    "40daa1d9c7314de4957a7669434db12aaa24630ba4": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "logActivity",
+          "filename": "nxt/New folder/Project_Management_NXT/src/lib/activity-logger.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "logActivity",
+      "filename": "nxt/New folder/Project_Management_NXT/src/lib/activity-logger.ts"
+    },
+    "403775645662f7593a65be1a569d77a1a93596c3ae": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getProjectSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "getProjectSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+    },
+    "40b69736d10082c7029d6a3ba958f68a26bb984d11": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getResolvedProjectSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "getResolvedProjectSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+    },
+    "605b6b24e07efe1c92d678d775d9b33fe01c191a36": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "resetProjectSetting",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "action-browser"
+      },
+      "exportedName": "resetProjectSetting",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+    },
+    "60dd758f1f511cf854a107f1bb542f2741d586bc05": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getProjectSetting",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "getProjectSetting",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+    },
+    "7802fce46123ca10d47a8086a9d3ea3e96b95af191": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "getProjectSettingsChangeLog",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "getProjectSettingsChangeLog",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+    },
+    "7c78551cafee9f072ea8e2de6a74f1f2afe17a47d6": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "createProjectSetting",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "rsc"
+      },
+      "exportedName": "createProjectSetting",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+    },
+    "7cf014ca08e543e0266b1bf98988bb7f513f6a9a2b": {
+      "workers": {
+        "app/dashboard/projects/[id]/settings/page": {
+          "moduleId": 335554,
+          "async": false,
+          "exportedName": "updateProjectSetting",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/projects/[id]/settings/page": "action-browser"
+      },
+      "exportedName": "updateProjectSetting",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-settings.ts"
+    }
+  },
+  "edge": {}
+}

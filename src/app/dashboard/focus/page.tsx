@@ -2,6 +2,8 @@ import { getFocusData } from "@/app/actions/focus"
 import { FocusSummary } from "@/components/focus/focus-summary"
 import { FocusBoardWrapper } from "@/components/focus/focus-board-wrapper"
 
+export const dynamic = "force-dynamic"
+
 export default async function FocusPage() {
     const data = await getFocusData()
 

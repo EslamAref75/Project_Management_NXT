@@ -8,16 +8,19 @@ import { prisma } from "@/lib/prisma";
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const setting = await prisma.systemSetting.findUnique({
-    where: { key: "general" }
-  });
-
   let title = "Qeema Tech Management";
-  if (setting && setting.value) {
+  if (process.env.DATABASE_URL) {
     try {
-      const value = JSON.parse(setting.value);
-      if (value.systemName) title = value.systemName;
-    } catch (e) { }
+      const setting = await prisma.systemSetting.findUnique({
+        where: { key: "general" }
+      });
+      if (setting?.value) {
+        const value = JSON.parse(setting.value);
+        if (value.systemName) title = value.systemName;
+      }
+    } catch (_e) {
+      // Use default title when DB is unavailable (e.g. during build)
+    }
   }
 
   return {

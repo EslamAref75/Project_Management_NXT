@@ -1,0 +1,35 @@
+{
+  "node": {
+    "0033db22356cbf8845a3517099b63dfc38d1147299": {
+      "workers": {
+        "app/register/page": {
+          "moduleId": 713482,
+          "async": false,
+          "exportedName": "getPublicSystemSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/register/page": "action-browser"
+      },
+      "exportedName": "getPublicSystemSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+    },
+    "40939913bcced5129a7de9a93cfc6e92fdacf5ef98": {
+      "workers": {
+        "app/register/page": {
+          "moduleId": 713482,
+          "async": false,
+          "exportedName": "registerUser",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/register.ts"
+        }
+      },
+      "layer": {
+        "app/register/page": "action-browser"
+      },
+      "exportedName": "registerUser",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/register.ts"
+    }
+  },
+  "edge": {}
+}

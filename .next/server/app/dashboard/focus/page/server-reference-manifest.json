@@ -1,0 +1,110 @@
+{
+  "node": {
+    "0033db22356cbf8845a3517099b63dfc38d1147299": {
+      "workers": {
+        "app/dashboard/focus/page": {
+          "moduleId": 126955,
+          "async": false,
+          "exportedName": "getPublicSystemSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/focus/page": "action-browser"
+      },
+      "exportedName": "getPublicSystemSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+    },
+    "00686a7231b739e4fe9b8305b757bc0e83827b9865": {
+      "workers": {
+        "app/dashboard/focus/page": {
+          "moduleId": 126955,
+          "async": false,
+          "exportedName": "getAllProjectsUnreadNotificationCount",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/focus/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsUnreadNotificationCount",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "4004a0aae390e2c1aeb900c79065f312ac43d90f8d": {
+      "workers": {
+        "app/dashboard/focus/page": {
+          "moduleId": 126955,
+          "async": false,
+          "exportedName": "getAllProjectsNotifications",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/focus/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsNotifications",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "60691655a7ad6aec29ab9691d8571a0d380be93da1": {
+      "workers": {
+        "app/dashboard/focus/page": {
+          "moduleId": 126955,
+          "async": false,
+          "exportedName": "markProjectNotificationAsRead",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/focus/page": "action-browser"
+      },
+      "exportedName": "markProjectNotificationAsRead",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "007d5ef8e5bd6c6d8278ed033292d0ab70046d8135": {
+      "workers": {
+        "app/dashboard/focus/page": {
+          "moduleId": 126955,
+          "async": false,
+          "exportedName": "getFocusData",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/focus.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/focus/page": "rsc"
+      },
+      "exportedName": "getFocusData",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/focus.ts"
+    },
+    "00ad55c3850c3b3723d967a043bb948c065a439feb": {
+      "workers": {
+        "app/dashboard/focus/page": {
+          "moduleId": 126955,
+          "async": false,
+          "exportedName": "clearFocus",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/focus.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/focus/page": "action-browser"
+      },
+      "exportedName": "clearFocus",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/focus.ts"
+    },
+    "60b0af629419f8586c8423795027b3c794e41679cf": {
+      "workers": {
+        "app/dashboard/focus/page": {
+          "moduleId": 126955,
+          "async": false,
+          "exportedName": "setFocusDate",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/focus.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/focus/page": "action-browser"
+      },
+      "exportedName": "setFocusDate",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/focus.ts"
+    }
+  },
+  "edge": {}
+}

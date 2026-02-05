@@ -1,0 +1,140 @@
+{
+  "node": {
+    "0033db22356cbf8845a3517099b63dfc38d1147299": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "getPublicSystemSettings",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "getPublicSystemSettings",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/settings.ts"
+    },
+    "00686a7231b739e4fe9b8305b757bc0e83827b9865": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "getAllProjectsUnreadNotificationCount",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsUnreadNotificationCount",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "4004a0aae390e2c1aeb900c79065f312ac43d90f8d": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "getAllProjectsNotifications",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "getAllProjectsNotifications",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "60691655a7ad6aec29ab9691d8571a0d380be93da1": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "markProjectNotificationAsRead",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "markProjectNotificationAsRead",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-notifications.ts"
+    },
+    "0059cd3e195cf85d3e59a91eb54091d7bf4cbae302": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "getDashboardSummary",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/dashboard.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "rsc"
+      },
+      "exportedName": "getDashboardSummary",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/dashboard.ts"
+    },
+    "0060f55b20101b46209916d322e57fe57b7697ebe9": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "getTodaysFocusTasks",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/dashboard.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "rsc"
+      },
+      "exportedName": "getTodaysFocusTasks",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/dashboard.ts"
+    },
+    "709a22b83fb95b514103e9a68c206c65a10f984982": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "updateTaskStatus",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/tasks.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "updateTaskStatus",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/tasks.ts"
+    },
+    "002d971c7f5a3882ee40ebedc20527bd73b0bb1658": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "getUrgentProjects",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-priority.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "getUrgentProjects",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-priority.ts"
+    },
+    "40271b869aa95cc70186c7d92a799fd4ff185374b6": {
+      "workers": {
+        "app/dashboard/page": {
+          "moduleId": 897850,
+          "async": false,
+          "exportedName": "acknowledgeUrgentProject",
+          "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-priority.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/page": "action-browser"
+      },
+      "exportedName": "acknowledgeUrgentProject",
+      "filename": "nxt/New folder/Project_Management_NXT/src/app/actions/project-priority.ts"
+    }
+  },
+  "edge": {}
+}

@@ -1,0 +1,3 @@
+{
+  "/api/forecast/task/[id]/route": "app/api/forecast/task/[id]/route.js"
+}
