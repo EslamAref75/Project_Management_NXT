@@ -9,6 +9,7 @@ import { Plus, X, UserCircle } from "lucide-react"
 import { AddMemberDialog } from "./add-member-dialog"
 import { removeMemberFromTeam } from "@/app/actions/teams"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 import { format } from "date-fns"
 
 interface TeamMembersProps {
@@ -18,6 +19,7 @@ interface TeamMembersProps {
 
 export function TeamMembers({ team, allUsers }: TeamMembersProps) {
     const router = useRouter()
+    const { toast } = useToast()
     const [addMemberOpen, setAddMemberOpen] = useState(false)
 
     const handleRemoveMember = async (userId: number) => {
@@ -29,7 +31,11 @@ export function TeamMembers({ team, allUsers }: TeamMembersProps) {
         if (result?.success) {
             router.refresh()
         } else {
-            alert(result?.error || "Failed to remove member")
+            toast({
+                variant: "destructive",
+                title: "Remove Failed",
+                description: result?.error || "Failed to remove member",
+            })
         }
     }
 

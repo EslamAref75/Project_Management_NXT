@@ -11,6 +11,7 @@ import {
     handleAuthorizationError,
     ForbiddenError,
 } from "@/lib/rbac-helpers"
+import { PERMISSIONS } from "@/lib/permissions"
 
 const teamSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -275,7 +276,7 @@ export async function deleteTeam(id: number) {
     if (!session) return { error: "Unauthorized" }
 
     try {
-        await requirePermission(parseInt(session.user.id), "team.delete")
+        await requirePermission(parseInt(session.user.id), PERMISSIONS.TEAM.DELETE)
     } catch (error: any) {
         return handleAuthorizationError(error)
     }
@@ -318,7 +319,7 @@ export async function addProjectToTeam(teamId: number, projectId: number) {
     if (!session) return { error: "Unauthorized" }
 
     try {
-        await requirePermission(parseInt(session.user.id), "team.addProject")
+        await requirePermission(parseInt(session.user.id), PERMISSIONS.TEAM.ASSIGN_PROJECT)
     } catch (error: any) {
         return handleAuthorizationError(error)
     }
@@ -376,7 +377,7 @@ export async function removeProjectFromTeam(teamId: number, projectId: number) {
     if (!session) return { error: "Unauthorized" }
 
     try {
-        await requirePermission(parseInt(session.user.id), "team.removeProject")
+        await requirePermission(parseInt(session.user.id), PERMISSIONS.TEAM.REMOVE_PROJECT)
     } catch (error: any) {
         return handleAuthorizationError(error)
     }
@@ -426,7 +427,7 @@ export async function addMemberToTeam(teamId: number, userId: number, role: stri
     if (!session) return { error: "Unauthorized" }
 
     try {
-        await requirePermission(parseInt(session.user.id), "team.addMember")
+        await requirePermission(parseInt(session.user.id), PERMISSIONS.TEAM.ADD_MEMBER)
     } catch (error: any) {
         return handleAuthorizationError(error)
     }
@@ -456,7 +457,7 @@ export async function removeMemberFromTeam(teamId: number, userId: number) {
     if (!session) return { error: "Unauthorized" }
 
     try {
-        await requirePermission(parseInt(session.user.id), "team.removeMember")
+        await requirePermission(parseInt(session.user.id), PERMISSIONS.TEAM.REMOVE_MEMBER)
     } catch (error: any) {
         return handleAuthorizationError(error)
     }

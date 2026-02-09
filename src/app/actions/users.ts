@@ -182,6 +182,7 @@ export async function updateUser(id: number, formData: FormData) {
 export async function deleteUser(id: number) {
   const session = await getServerSession(authOptions)
   if (!session) return { error: "Unauthorized", code: "UNAUTHORIZED" }
+  const actorId = parseInt(session.user.id)
 
   try {
     // Check permission to delete users (RBAC, not role)
@@ -191,7 +192,7 @@ export async function deleteUser(id: number) {
   }
 
   // Prevent self-deletion
-  if (parseInt(session.user.id) === id) {
+  if (actorId === id) {
     return { error: "Cannot delete your own account", code: "SELF_DELETE" }
   }
 
@@ -209,9 +210,7 @@ export async function deleteUser(id: number) {
         teamsLed: {
           select: { id: true, name: true }
         },
-        timeLogs: { select: { id: true }, take: 1 },
-        comments: { select: { id: true }, take: 1 },
-        uploadedFiles: { select: { id: true }, take: 1 },
+       
       }
     })
 
@@ -237,14 +236,7 @@ export async function deleteUser(id: number) {
       }
     }
 
-    // Check for critical history that blocks deletion
-    if (user.timeLogs.length > 0 || user.comments.length > 0 || user.uploadedFiles.length > 0) {
-      return {
-        error: "Cannot delete: User has associated history (Time Logs, Comments, or Files). Please deactivate the user instead to preserve data integrity.",
-        code: "HAS_HISTORY"
-      }
-    }
-
+   
     // Perform deletion with cleanup in a transaction
     await prisma.$transaction(async (tx) => {
       // 1. Resolve optional links (ActivityLog) - these don't strictly require user existence
@@ -258,19 +250,126 @@ export async function deleteUser(id: number) {
         data: { affectedUserId: null }
       })
 
-      // 2. Nullify creator references for projects
+      await tx.activityLog.updateMany({
+        where: { userId: id },
+        data: { userId: null }
+      })
+
+      // 2. Nullify user references in project/task/subtask relations
       await tx.project.updateMany({
         where: { createdById: id },
         data: { createdById: null }
       })
 
-      // 3. Nullify creator references for tasks
+      await tx.project.updateMany({
+        where: { projectManagerId: id },
+        data: { projectManagerId: null }
+      })
+
+      await tx.project.updateMany({
+        where: { urgentMarkedById: id },
+        data: { urgentMarkedById: null }
+      })
+
+      // 3. Nullify creator references for tasks/subtasks
       await tx.task.updateMany({
         where: { createdById: id },
         data: { createdById: null }
       })
 
-      // 4. Disconnect user from assigned tasks (many-to-many)
+      await tx.subtask.updateMany({
+        where: { assignedToId: id },
+        data: { assignedToId: null }
+      })
+
+      await tx.subtask.updateMany({
+        where: { createdById: id },
+        data: { createdById: actorId }
+      })
+
+      // 4. Reassign required "updated/changed by" audit references
+      await tx.systemSetting.updateMany({
+        where: { updatedBy: id },
+        data: { updatedBy: actorId }
+      })
+
+      await tx.projectSetting.updateMany({
+        where: { updatedBy: id },
+        data: { updatedBy: actorId }
+      })
+
+      await tx.projectSettingsChangeLog.updateMany({
+        where: { changedBy: id },
+        data: { changedBy: actorId }
+      })
+
+      await tx.settingsChangeLog.updateMany({
+        where: { userId: id },
+        data: { userId: actorId }
+      })
+
+      await tx.userSetting.updateMany({
+        where: { updatedBy: id },
+        data: { updatedBy: actorId }
+      })
+
+      await tx.userSettingsChangeLog.updateMany({
+        where: { changedBy: id },
+        data: { changedBy: actorId }
+      })
+
+      await tx.automationRule.updateMany({
+        where: { createdById: id },
+        data: { createdById: actorId }
+      })
+
+      await tx.subtask.updateMany({
+        where: { assignedToId: id },
+        data: { assignedToId: null }
+      })
+
+      await tx.subtask.updateMany({
+        where: { createdById: id },
+        data: { createdById: actorId }
+      })
+
+      // 4. Reassign required "updated/changed by" audit references
+      await tx.systemSetting.updateMany({
+        where: { updatedBy: id },
+        data: { updatedBy: actorId }
+      })
+
+      await tx.projectSetting.updateMany({
+        where: { updatedBy: id },
+        data: { updatedBy: actorId }
+      })
+
+      await tx.projectSettingsChangeLog.updateMany({
+        where: { changedBy: id },
+        data: { changedBy: actorId }
+      })
+
+      await tx.settingsChangeLog.updateMany({
+        where: { userId: id },
+        data: { userId: actorId }
+      })
+
+      await tx.userSetting.updateMany({
+        where: { updatedBy: id },
+        data: { updatedBy: actorId }
+      })
+
+      await tx.userSettingsChangeLog.updateMany({
+        where: { changedBy: id },
+        data: { changedBy: actorId }
+      })
+
+      await tx.automationRule.updateMany({
+        where: { createdById: id },
+        data: { createdById: actorId }
+      })
+
+      // 5. Disconnect user from assigned tasks (many-to-many)
       const assignedTasks = await tx.task.findMany({
         where: {
           assignees: {
@@ -291,7 +390,13 @@ export async function deleteUser(id: number) {
         })
       }
 
-      // 5. Clean up other many-to-many or cleanup-safe relations
+     // 6. Delete direct user-owned data
+     await tx.notification.deleteMany({ where: { userId: id } })
+     await tx.timeLog.deleteMany({ where: { userId: id } })
+     await tx.comment.deleteMany({ where: { userId: id } })
+     await tx.attachment.deleteMany({ where: { uploadedById: id } })
+
+     // 7. Clean up other many-to-many or cleanup-safe relations
       // Remove from teams
       await tx.teamMember.deleteMany({
         where: { userId: id }
@@ -302,7 +407,13 @@ export async function deleteUser(id: number) {
         where: { userId: id }
       })
 
-      // 6. Delete the user
+     // 6. Delete direct user-owned data
+     await tx.notification.deleteMany({ where: { userId: id } })
+     await tx.timeLog.deleteMany({ where: { userId: id } })
+     await tx.comment.deleteMany({ where: { userId: id } })
+     await tx.attachment.deleteMany({ where: { uploadedById: id } })
+
+     // 7. Clean up other many-to-many or cleanup-safe relations
       await tx.user.delete({ where: { id } })
     })
 
