@@ -5,6 +5,7 @@ const router = express.Router();
 const { authMiddleware } = require("../middleware/auth");
 const { prisma } = require("../lib/prisma");
 const { hasPermissionWithoutRoleBypass } = require("../lib/rbac");
+const { sendError, CODES } = require("../lib/errorResponse");
 
 router.use(authMiddleware);
 
@@ -121,14 +122,14 @@ router.get("/projects", async (req, res) => {
     return res.json({ success: true, projects, total, page, limit });
   } catch (err) {
     console.error("[projects] list:", err);
-    return res.status(500).json({ error: err.message || "Failed to fetch projects" });
+    return sendError(res, 500, err.message || "Failed to fetch projects", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
 router.get("/projects/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid project ID" });
+    if (Number.isNaN(id)) return sendError(res, 400, "Invalid project ID", { code: CODES.BAD_REQUEST, requestId: req.id });
 
     const [project, tasks, teams] = await Promise.all([
       prisma.project.findUnique({
@@ -215,11 +216,11 @@ router.get("/projects/:id", async (req, res) => {
       }),
     ]);
 
-    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (!project) return sendError(res, 404, "Project not found", { code: CODES.NOT_FOUND, requestId: req.id });
     return res.json({ ...project, tasks, projectTeams: teams });
   } catch (err) {
     console.error("[projects] get:", err);
-    return res.status(500).json({ error: err.message || "Failed to fetch project" });
+    return sendError(res, 500, err.message || "Failed to fetch project", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
@@ -228,12 +229,12 @@ router.post("/projects", async (req, res) => {
     const userId = Number(req.user.id);
     const allowed = await hasPermissionWithoutRoleBypass(userId, "project.create");
     if (!allowed) {
-      return res.status(403).json({ error: "Permission denied: You don't have permission to create projects" });
+      return sendError(res, 403, "Permission denied: You don't have permission to create projects", { code: CODES.FORBIDDEN, requestId: req.id });
     }
     const body = req.body || {};
     const name = body.name;
     if (!name || typeof name !== "string" || !name.trim()) {
-      return res.status(400).json({ error: "Name is required" });
+      return sendError(res, 400, "Name is required", { code: CODES.BAD_REQUEST, requestId: req.id });
     }
     const projectTypeId = body.projectTypeId != null ? parseInt(body.projectTypeId, 10) : null;
     let typeName = body.type || "";
@@ -262,26 +263,26 @@ router.post("/projects", async (req, res) => {
     return res.status(200).json({ success: true, id: project.id });
   } catch (err) {
     console.error("[projects] create:", err);
-    return res.status(500).json({ error: err.message || "Failed to create project" });
+    return sendError(res, 500, err.message || "Failed to create project", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
 router.patch("/projects/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid project ID" });
+    if (Number.isNaN(id)) return sendError(res, 400, "Invalid project ID", { code: CODES.BAD_REQUEST, requestId: req.id });
     const userId = Number(req.user.id);
 
     const existing = await prisma.project.findUnique({
       where: { id },
       select: { id: true, createdById: true },
     });
-    if (!existing) return res.status(404).json({ error: "Project not found" });
+    if (!existing) return sendError(res, 404, "Project not found", { code: CODES.NOT_FOUND, requestId: req.id });
 
     const allowed = await hasPermissionWithoutRoleBypass(userId, "project.update", id);
     const isCreator = existing.createdById === userId;
     if (!allowed && !isCreator) {
-      return res.status(403).json({ error: "Permission denied" });
+      return sendError(res, 403, "Permission denied", { code: CODES.FORBIDDEN, requestId: req.id });
     }
 
     const body = req.body || {};
@@ -316,33 +317,33 @@ router.patch("/projects/:id", async (req, res) => {
     return res.json({ success: true });
   } catch (err) {
     console.error("[projects] update:", err);
-    return res.status(500).json({ error: err.message || "Failed to update project" });
+    return sendError(res, 500, err.message || "Failed to update project", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
 router.delete("/projects/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid project ID" });
+    if (Number.isNaN(id)) return sendError(res, 400, "Invalid project ID", { code: CODES.BAD_REQUEST, requestId: req.id });
     const userId = Number(req.user.id);
 
     const existing = await prisma.project.findUnique({
       where: { id },
       select: { id: true, createdById: true },
     });
-    if (!existing) return res.status(404).json({ error: "Project not found" });
+    if (!existing) return sendError(res, 404, "Project not found", { code: CODES.NOT_FOUND, requestId: req.id });
 
     const allowed = await hasPermissionWithoutRoleBypass(userId, "project.delete", id);
     const isCreator = existing.createdById === userId;
     if (!allowed && !isCreator) {
-      return res.status(403).json({ error: "Permission denied" });
+      return sendError(res, 403, "Permission denied", { code: CODES.FORBIDDEN, requestId: req.id });
     }
 
     await prisma.project.delete({ where: { id } });
     return res.json({ success: true });
   } catch (err) {
     console.error("[projects] delete:", err);
-    return res.status(500).json({ error: err.message || "Failed to delete project" });
+    return sendError(res, 500, err.message || "Failed to delete project", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
@@ -362,17 +363,14 @@ router.get("/project-types", async (req, res) => {
     return res.json({ success: true, projectTypes: formatted });
   } catch (err) {
     console.error("[project-types]:", err);
-    return res.status(500).json({ error: err.message || "Failed to fetch project types" });
+    return sendError(res, 500, err.message || "Failed to fetch project types", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
 router.get("/project-statuses", async (req, res) => {
   try {
     if (!prisma.projectStatus) {
-      return res.status(503).json({
-        error: "ProjectStatus model not available",
-        details: "Run prisma generate in the backend app",
-      });
+      return sendError(res, 503, "ProjectStatus model not available", { code: CODES.SERVER_ERROR, requestId: req.id });
     }
     const includeInactive = req.query.includeInactive === "true";
     const where = includeInactive ? {} : { isActive: true };
@@ -383,7 +381,7 @@ router.get("/project-statuses", async (req, res) => {
     return res.json({ success: true, projectStatuses });
   } catch (err) {
     console.error("[project-statuses]:", err);
-    return res.status(500).json({ error: err.message || "Failed to fetch project statuses" });
+    return sendError(res, 500, err.message || "Failed to fetch project statuses", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 

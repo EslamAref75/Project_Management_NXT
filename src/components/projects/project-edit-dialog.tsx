@@ -86,7 +86,16 @@ export function ProjectEditDialog({ project, open, onOpenChange }: ProjectEditDi
             setLoadingStatuses(false)
             
             if ("success" in typesResult && typesResult.success) {
-                const types = typesResult.projectTypes || []
+                const raw = typesResult.projectTypes || []
+                const types: ProjectType[] = raw.map((t: { id: number; name: string; description?: string | null; isActive: boolean; displayOrder?: number; color?: string | null; icon?: string | null; usageCount?: number }) => ({
+                    id: t.id,
+                    name: t.name,
+                    description: t.description ?? null,
+                    isActive: t.isActive,
+                    displayOrder: t.displayOrder ?? 0,
+                    color: t.color ?? null,
+                    icon: t.icon ?? null,
+                }))
                 setProjectTypes(types)
                 
                 // Set the selected project type ID

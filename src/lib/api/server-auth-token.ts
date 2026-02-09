@@ -8,7 +8,7 @@ import { cookies } from "next/headers"
 export async function getServerAuthToken(): Promise<string | null> {
   const cookieStore = await cookies()
   const token = await getToken({
-    req: { cookies: cookieStore } as Parameters<typeof getToken>[0]["req"],
+    req: { cookies: cookieStore } as unknown as Parameters<typeof getToken>[0]["req"],
     raw: true,
   })
   return token ?? null

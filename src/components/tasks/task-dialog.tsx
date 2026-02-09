@@ -50,8 +50,9 @@ export function TaskDialog({ projectId, users = [] }: { projectId: number, users
                 setOpen(false)
                 router.refresh() // Refresh the page to show the new task
             } else {
-                console.error("Task creation failed:", result?.error, result?.details)
-                alert(result?.error || (result as { details?: string })?.details || "Failed to create task")
+                const errMsg = result?.error ?? "Failed to create task"
+                console.error("Task creation failed:", errMsg)
+                alert(errMsg)
             }
         } catch (error: any) {
             console.error("Task creation error:", error)

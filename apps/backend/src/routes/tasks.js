@@ -5,6 +5,7 @@ const router = express.Router();
 const { authMiddleware } = require("../middleware/auth");
 const { prisma } = require("../lib/prisma");
 const { hasPermissionWithoutRoleBypass } = require("../lib/rbac");
+const { sendError, CODES } = require("../lib/errorResponse");
 
 router.use(authMiddleware);
 
@@ -113,14 +114,14 @@ router.get("/tasks", async (req, res) => {
     return res.json({ success: true, tasks, total, page, limit });
   } catch (err) {
     console.error("[tasks] list:", err);
-    return res.status(500).json({ error: err.message || "Failed to fetch tasks" });
+    return sendError(res, 500, err.message || "Failed to fetch tasks", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
 router.get("/tasks/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid task ID" });
+    if (Number.isNaN(id)) return sendError(res, 400, "Invalid task ID", { code: CODES.BAD_REQUEST, requestId: req.id });
     const userId = Number(req.user.id);
     const task = await prisma.task.findUnique({
       where: { id },
@@ -192,16 +193,16 @@ router.get("/tasks/:id", async (req, res) => {
         _count: { select: { subtasks: true, dependencies: true, dependents: true, comments: true } },
       },
     });
-    if (!task) return res.status(404).json({ error: "Task not found" });
+    if (!task) return sendError(res, 404, "Task not found", { code: CODES.NOT_FOUND, requestId: req.id });
     if (req.user.role !== "admin") {
       const isAssignee = task.assignees.some((a) => a.id === userId);
       const isCreator = task.createdById === userId;
-      if (!isAssignee && !isCreator) return res.status(404).json({ error: "Task not found" });
+      if (!isAssignee && !isCreator) return sendError(res, 404, "Task not found", { code: CODES.NOT_FOUND, requestId: req.id });
     }
     return res.json(task);
   } catch (err) {
     console.error("[tasks] get:", err);
-    return res.status(500).json({ error: err.message || "Failed to fetch task" });
+    return sendError(res, 500, err.message || "Failed to fetch task", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
@@ -211,14 +212,14 @@ router.post("/tasks", async (req, res) => {
     const body = req.body || {};
     const projectId = body.projectId != null ? parseInt(body.projectId, 10) : null;
     if (!projectId || Number.isNaN(projectId)) {
-      return res.status(400).json({ error: "projectId is required" });
+      return sendError(res, 400, "projectId is required", { code: CODES.BAD_REQUEST, requestId: req.id });
     }
     const allowed = await hasPermissionWithoutRoleBypass(userId, "task.create", projectId);
     if (!allowed) {
-      return res.status(403).json({ error: "Permission denied: You don't have permission to create tasks" });
+      return sendError(res, 403, "Permission denied: You don't have permission to create tasks", { code: CODES.FORBIDDEN, requestId: req.id });
     }
     const title = body.title && String(body.title).trim();
-    if (!title) return res.status(400).json({ error: "title is required" });
+    if (!title) return sendError(res, 400, "title is required", { code: CODES.BAD_REQUEST, requestId: req.id });
     const assigneeIds = Array.isArray(body.assigneeIds) ? body.assigneeIds.map((id) => parseInt(id, 10)).filter((n) => !Number.isNaN(n)) : [];
     const task = await prisma.task.create({
       data: {
@@ -237,25 +238,25 @@ router.post("/tasks", async (req, res) => {
     return res.status(200).json({ success: true, id: task.id });
   } catch (err) {
     console.error("[tasks] create:", err);
-    return res.status(500).json({ error: err.message || "Failed to create task" });
+    return sendError(res, 500, err.message || "Failed to create task", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
 router.patch("/tasks/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid task ID" });
+    if (Number.isNaN(id)) return sendError(res, 400, "Invalid task ID", { code: CODES.BAD_REQUEST, requestId: req.id });
     const userId = Number(req.user.id);
     const existing = await prisma.task.findUnique({
       where: { id },
       select: { id: true, createdById: true, projectId: true, assignees: { select: { id: true } } },
     });
-    if (!existing) return res.status(404).json({ error: "Task not found" });
+    if (!existing) return sendError(res, 404, "Task not found", { code: CODES.NOT_FOUND, requestId: req.id });
     const allowed = await hasPermissionWithoutRoleBypass(userId, "task.update", existing.projectId);
     const isCreator = existing.createdById === userId;
     const isAssignee = existing.assignees.some((a) => a.id === userId);
     if (!allowed && !isCreator && !isAssignee) {
-      return res.status(403).json({ error: "Permission denied" });
+      return sendError(res, 403, "Permission denied", { code: CODES.FORBIDDEN, requestId: req.id });
     }
     const body = req.body || {};
     const updateData = {};
@@ -276,30 +277,30 @@ router.patch("/tasks/:id", async (req, res) => {
     return res.json({ success: true });
   } catch (err) {
     console.error("[tasks] update:", err);
-    return res.status(500).json({ error: err.message || "Failed to update task" });
+    return sendError(res, 500, err.message || "Failed to update task", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
 router.delete("/tasks/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid task ID" });
+    if (Number.isNaN(id)) return sendError(res, 400, "Invalid task ID", { code: CODES.BAD_REQUEST, requestId: req.id });
     const userId = Number(req.user.id);
     const task = await prisma.task.findUnique({
       where: { id },
       select: { id: true, createdById: true, projectId: true },
     });
-    if (!task) return res.status(404).json({ error: "Task not found" });
+    if (!task) return sendError(res, 404, "Task not found", { code: CODES.NOT_FOUND, requestId: req.id });
     const allowed = await hasPermissionWithoutRoleBypass(userId, "task.delete", task.projectId);
     const isCreator = task.createdById === userId;
     if (!allowed && !isCreator) {
-      return res.status(403).json({ error: "Permission denied" });
+      return sendError(res, 403, "Permission denied", { code: CODES.FORBIDDEN, requestId: req.id });
     }
     await prisma.task.delete({ where: { id } });
     return res.json({ success: true });
   } catch (err) {
     console.error("[tasks] delete:", err);
-    return res.status(500).json({ error: err.message || "Failed to delete task" });
+    return sendError(res, 500, err.message || "Failed to delete task", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
@@ -314,7 +315,7 @@ router.get("/task-statuses", async (req, res) => {
     return res.json({ success: true, taskStatuses });
   } catch (err) {
     console.error("[tasks] task-statuses:", err);
-    return res.status(500).json({ error: err.message || "Failed to fetch task statuses" });
+    return sendError(res, 500, err.message || "Failed to fetch task statuses", { code: CODES.INTERNAL_ERROR, requestId: req.id });
   }
 });
 
