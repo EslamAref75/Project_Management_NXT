@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { createTask } from "@/app/actions/tasks"
+import { tasksAdapter } from "@/lib/api/tasks-adapter"
 import { Loader2, Plus } from "lucide-react"
 
 export function TaskDialog({ projectId, users = [] }: { projectId: number, users?: any[] }) {
@@ -42,7 +42,7 @@ export function TaskDialog({ projectId, users = [] }: { projectId: number, users
 
         try {
             console.log("Creating task with data:", Object.fromEntries(formData.entries()))
-            const result = await createTask(formData)
+            const result = await tasksAdapter.createTask(formData)
             console.log("Task creation result:", result)
 
             if (result?.success) {
@@ -51,7 +51,7 @@ export function TaskDialog({ projectId, users = [] }: { projectId: number, users
                 router.refresh() // Refresh the page to show the new task
             } else {
                 console.error("Task creation failed:", result?.error, result?.details)
-                alert(result?.error || result?.details || "Failed to create task")
+                alert(result?.error || (result as { details?: string })?.details || "Failed to create task")
             }
         } catch (error: any) {
             console.error("Task creation error:", error)

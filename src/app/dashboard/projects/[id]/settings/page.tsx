@@ -1,4 +1,4 @@
-import { getProject } from "@/app/actions/projects"
+import { getProjectServer } from "@/lib/api/projects-server"
 import { getProjectSettings, getResolvedProjectSettings } from "@/app/actions/project-settings"
 import { ProjectSettingsPanel } from "@/components/projects/project-settings-panel"
 import { Card } from "@/components/ui/card"
@@ -22,11 +22,12 @@ export default async function ProjectSettingsPage({
     const { id } = await params
     const projectId = parseInt(id)
 
-    // Check if user is admin or project manager
-    const project = await getProject(projectId)
-    if (!project) {
+    // Check if user is admin or project manager (project from backend when configured)
+    const rawProject = await getProjectServer(projectId)
+    if (!rawProject) {
         redirect("/dashboard/projects")
     }
+    const project = rawProject as { projectManagerId?: number | null; createdById?: number | null; name?: string }
 
     const isAdmin = session.user.role === "admin"
     const isProjectManager = project.projectManagerId === parseInt(session.user.id) || 
@@ -74,7 +75,7 @@ export default async function ProjectSettingsPage({
             ) : (
                 <ProjectSettingsPanel
                     projectId={projectId}
-                    projectName={project.name}
+                    projectName={project.name ?? ""}
                     projectSettings={projectSettings}
                     resolvedSettings={resolvedSettings}
                     isAdmin={isAdmin}

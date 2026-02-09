@@ -1,0 +1,305 @@
+openapi: 3.0.3
+info:
+  title: PMS Projects API
+  version: 1.0.0
+  description: Projects domain API for the Project Management System. Phase 1 contract.
+
+servers:
+  - url: /api/v1
+    description: Same-origin API (relative to app origin)
+
+paths:
+  /projects:
+    get:
+      operationId: listProjects
+      summary: List projects with optional filters
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Search by project name
+        - name: category
+          in: query
+          schema: { type: array, items: { type: string } }
+          style: form
+          description: Filter by type/category
+        - name: status
+          in: query
+          schema: { type: array, items: { type: string } }
+          style: form
+          description: Filter by status (IDs or names)
+        - name: priority
+          in: query
+          schema: { type: array, items: { type: string, enum: [normal, high, urgent] } }
+          style: form
+        - name: startDate
+          in: query
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date }
+        - name: projectManager
+          in: query
+          schema: { type: string }
+          description: Project manager user ID
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 12 }
+      responses:
+        "200":
+          description: Paginated list of projects
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectListResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    post:
+      operationId: createProject
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectCreateInput" }
+      responses:
+        "200":
+          description: Project created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectMutationResponse" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      summary: Get a single project by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Project details (or null if not found / no access)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectDetail" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    patch:
+      operationId: updateProject
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProjectUpdateInput" }
+      responses:
+        "200":
+          description: Update result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectMutationResponse" }
+        "401":
+        "403":
+        "404":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    delete:
+      operationId: deleteProject
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deletion result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectMutationResponse" }
+        "401":
+        "403":
+        "404":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /project-types:
+    get:
+      operationId: getProjectTypes
+      summary: List project types (metadata)
+      parameters:
+        - name: includeInactive
+          in: query
+          schema: { type: boolean, default: false }
+        - name: includeUsageCount
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: List of project types
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectTypesResponse" }
+        "401":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /project-statuses:
+    get:
+      operationId: getProjectStatuses
+      summary: List project statuses (metadata)
+      parameters:
+        - name: includeInactive
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: List of project statuses
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectStatusesResponse" }
+        "401":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+        details: { type: string }
+
+    ProjectListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        projects: { type: array, items: { $ref: "#/components/schemas/ProjectListItem" } }
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+
+    ProjectListItem:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        status: { type: string }
+        type: { type: string }
+        projectStatusId: { type: integer, nullable: true }
+        projectTypeId: { type: integer, nullable: true }
+        projectManagerId: { type: integer, nullable: true }
+        startDate: { type: string, format: date-time, nullable: true }
+        endDate: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        createdById: { type: integer, nullable: true }
+        projectManager: { $ref: "#/components/schemas/UserRef" }
+        _count: { type: object, properties: { tasks: { type: integer }, projectUsers: { type: integer }, notifications: { type: integer } } }
+
+    UserRef:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        email: { type: string }
+        avatarUrl: { type: string, nullable: true }
+
+    ProjectDetail:
+      type: object
+      nullable: true
+      description: Full project with tasks and teams; null if not found or no access
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        status: { type: string }
+        type: { type: string }
+        projectStatusId: { type: integer, nullable: true }
+        projectTypeId: { type: integer, nullable: true }
+        projectManagerId: { type: integer, nullable: true }
+        startDate: { type: string, format: date-time, nullable: true }
+        endDate: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        createdById: { type: integer, nullable: true }
+        projectType: { type: object, nullable: true }
+        projectStatus: { type: object, nullable: true }
+        projectManager: { $ref: "#/components/schemas/UserRef" }
+        tasks: { type: array }
+        projectTeams: { type: array }
+
+    ProjectCreateInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        type: { type: string }
+        projectTypeId: { type: integer, nullable: true }
+        projectStatusId: { type: integer, nullable: true }
+        description: { type: string }
+        scope: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        projectManagerId: { type: integer, nullable: true }
+
+    ProjectUpdateInput:
+      type: object
+      properties:
+        name: { type: string }
+        type: { type: string }
+        projectTypeId: { type: integer, nullable: true }
+        projectStatusId: { type: integer, nullable: true }
+        description: { type: string }
+        scope: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        projectManagerId: { type: integer, nullable: true }
+
+    ProjectMutationResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        error: { type: string }
+
+    ProjectTypesResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        projectTypes: { type: array }
+        error: { type: string }
+
+    ProjectStatusesResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        projectStatuses: { type: array }
+        error: { type: string }

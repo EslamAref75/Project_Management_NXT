@@ -1,12 +1,12 @@
-import { getProjectsWithFilters } from "@/app/actions/projects"
+import { getProjectsWithFiltersServer } from "@/lib/api/projects-server"
 import { getUsers } from "@/app/actions/users"
 import { getAllProjectsStats } from "@/app/actions/stats"
 import { ProjectsDashboard } from "@/components/projects/projects-dashboard"
 
 export default async function ProjectsPage() {
-    // Get initial data
+    // Get initial data (uses backend when configured)
     const [initialResult, statsResult, users] = await Promise.all([
-        getProjectsWithFilters({
+        getProjectsWithFiltersServer({
             page: 1,
             limit: 12,
         }),

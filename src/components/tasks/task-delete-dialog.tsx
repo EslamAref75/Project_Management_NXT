@@ -10,7 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { deleteTask } from "@/app/actions/tasks"
+import { tasksAdapter } from "@/lib/api/tasks-adapter"
 import { Loader2, AlertTriangle } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -33,7 +33,7 @@ export function TaskDeleteDialog({ task, projectId, open, onOpenChange }: TaskDe
 
     async function handleDelete() {
         setLoading(true)
-        const result = await deleteTask(task.id)
+        const result = await tasksAdapter.deleteTask(task.id)
 
         setLoading(false)
         if (result?.success) {
@@ -41,7 +41,7 @@ export function TaskDeleteDialog({ task, projectId, open, onOpenChange }: TaskDe
             router.push(`/dashboard/projects/${projectId}`)
             router.refresh()
         } else {
-            alert(result?.error + (result?.details ? `\n\n${result.details}` : ""))
+            alert(result?.error + ((result as { details?: string })?.details ? `\n\n${(result as { details?: string }).details}` : ""))
         }
     }
 

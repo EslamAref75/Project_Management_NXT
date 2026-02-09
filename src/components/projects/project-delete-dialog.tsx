@@ -10,7 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { deleteProject } from "@/app/actions/projects"
+import { projectsAdapter } from "@/lib/api/projects-adapter"
 import { Loader2, AlertTriangle } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -30,7 +30,7 @@ export function ProjectDeleteDialog({ project, open, onOpenChange }: ProjectDele
 
     async function handleDelete() {
         setLoading(true)
-        const result = await deleteProject(project.id)
+        const result = await projectsAdapter.deleteProject(project.id)
 
         setLoading(false)
         if (result?.success) {
@@ -38,7 +38,7 @@ export function ProjectDeleteDialog({ project, open, onOpenChange }: ProjectDele
             router.push("/dashboard/projects")
             router.refresh()
         } else {
-            alert(result?.error + (result?.details ? `\n\n${result.details}` : ""))
+            alert(result?.error + ((result as { details?: string })?.details ? `\n\n${(result as { details?: string }).details}` : ""))
         }
     }
 

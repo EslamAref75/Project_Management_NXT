@@ -1,4 +1,4 @@
-import { getTasksWithFilters } from "@/app/actions/tasks"
+import { getTasksWithFiltersServer } from "@/lib/api/tasks-server"
 import { getUsers } from "@/app/actions/users"
 import { getProjects } from "@/app/actions/projects"
 import { TasksDashboard } from "@/components/tasks/tasks-dashboard"
@@ -6,12 +6,12 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
 export default async function TasksPage() {
-    // Get initial data
+    // Get initial data (tasks from backend when configured)
     const session = await getServerSession(authOptions)
     if (!session) return null
 
     const [initialResult, users, projects] = await Promise.all([
-        getTasksWithFilters({
+        getTasksWithFiltersServer({
             page: 1,
             limit: 20,
         }),

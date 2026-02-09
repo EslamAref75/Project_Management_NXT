@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { updateTaskStatus } from "@/app/actions/tasks"
-import { getTaskStatuses } from "@/app/actions/task-statuses"
+import { tasksAdapter } from "@/lib/api/tasks-adapter"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
@@ -32,7 +32,7 @@ export function TaskStatusUpdate({ taskId, currentStatus, currentTaskStatusId, p
     useEffect(() => {
         async function loadTaskStatuses() {
             setLoadingStatuses(true)
-            const result = await getTaskStatuses(false) // Only active statuses
+            const result = await tasksAdapter.getTaskStatuses(false) // Only active statuses
             setLoadingStatuses(false)
             
             if (result.success) {

@@ -1,0 +1,6 @@
+{
+  "name": "@pms/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API contracts (OpenAPI) for Project Management System"
+}

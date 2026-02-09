@@ -10,7 +10,7 @@ import { TasksTableView } from "./tasks-table-view"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2, AlertCircle, ListTodo, User, CalendarCheck, Ban, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { getTasksWithFilters } from "@/app/actions/tasks"
+import { tasksAdapter } from "@/lib/api/tasks-adapter"
 import { getTaskStats, TaskStats } from "@/app/actions/stats"
 import { SummaryStatsCards, StatCardData } from "@/components/dashboard/summary-stats-cards"
 import Link from "next/link"
@@ -173,7 +173,7 @@ export function TasksDashboard({
             setStatsLoading(true)
             try {
                 const [tasksResult, statsResult] = await Promise.all([
-                    getTasksWithFilters({
+                    tasksAdapter.listTasks({
                         search: searchQuery,
                         projectId: projectFilter.length > 0 ? projectFilter : undefined,
                         status: statusFilter.length > 0 ? statusFilter : undefined,
@@ -196,11 +196,11 @@ export function TasksDashboard({
                     })
                 ])
 
-                if (tasksResult.success) {
+                if (tasksResult && "success" in tasksResult && tasksResult.success) {
                     setTasks(tasksResult.tasks || [])
                     setTotal(tasksResult.total || 0)
                 } else {
-                    setError(tasksResult.error || "Failed to load tasks")
+                    setError((tasksResult as { error?: string })?.error || "Failed to load tasks")
                 }
 
                 if (statsResult.success && statsResult.data) {

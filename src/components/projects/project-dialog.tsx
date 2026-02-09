@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createProject } from "@/app/actions/projects"
-import { getProjectTypes } from "@/app/actions/project-types"
+import { projectsAdapter } from "@/lib/api/projects-adapter"
 import { Loader2, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -49,11 +48,11 @@ export function ProjectDialog({ onProjectCreated }: ProjectDialogProps) {
     useEffect(() => {
         async function loadProjectTypes() {
             setLoadingTypes(true)
-            const result = await getProjectTypes(false) // Only active types
+            const result = await projectsAdapter.getProjectTypes(false) // Only active types
             setLoadingTypes(false)
             
-            if (result.success) {
-                setProjectTypes(result.projectTypes || [])
+            if ("success" in result && result.success) {
+                setProjectTypes((result.projectTypes || []) as ProjectType[])
             }
         }
         
@@ -67,7 +66,7 @@ export function ProjectDialog({ onProjectCreated }: ProjectDialogProps) {
         setLoading(true)
         const formData = new FormData(event.currentTarget)
 
-        const result = await createProject(formData)
+        const result = await projectsAdapter.createProject(formData)
 
         setLoading(false)
         if (result?.success) {

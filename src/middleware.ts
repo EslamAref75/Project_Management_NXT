@@ -1,17 +1,27 @@
 import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { recordRequest } from "@/lib/metrics"
 
 export default withAuth(
     function middleware(req: NextRequest & { nextauth?: { token: any } }) {
+        const start = Date.now()
+        const path = req.nextUrl.pathname
+
         if (
             req.nextUrl.pathname === "/login" ||
             req.nextUrl.pathname === "/register"
         ) {
             if (req.nextauth?.token) {
-                return NextResponse.redirect(new URL("/dashboard", req.url))
+                const res = NextResponse.redirect(new URL("/dashboard", req.url))
+                recordRequest(path, res.status, Date.now() - start)
+                return res
             }
         }
+
+        const res = NextResponse.next()
+        recordRequest(path, res.status, Date.now() - start)
+        return res
     },
     {
         callbacks: {

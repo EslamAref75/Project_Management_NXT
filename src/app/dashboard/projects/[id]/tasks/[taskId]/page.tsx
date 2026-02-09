@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getTask } from "@/app/actions/tasks"
+import { getTaskServer } from "@/lib/api/tasks-server"
 import { getUsers } from "@/app/actions/users"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
@@ -24,10 +24,34 @@ export default async function TaskPage({ params }: { params: Params }) {
 
     if (isNaN(projectId) || isNaN(tId)) notFound()
 
-    const task = await getTask(tId)
+    const rawTask = await getTaskServer(tId)
     const users = await getUsers()
 
-    if (!task) notFound()
+    if (!rawTask) notFound()
+
+    const task = rawTask as {
+        id: number
+        title: string
+        description?: string | null
+        status: string
+        priority?: string
+        dueDate?: string | null
+        projectId: number
+        createdAt: string
+        createdById?: number | null
+        taskStatusId?: number | null
+        dependencies?: Array<{ dependsOnTask: { id: number; title: string }; createdAt?: unknown }>
+        project: { id: number; name: string }
+        assignees?: Array<{ id: number; username: string; email?: string; avatarUrl?: string }>
+        taskStatus?: { id: number; name: string; color?: string } | null
+        team?: { id: number; name: string } | null
+        creator?: { id: number; username: string } | null
+        attachments?: unknown[]
+        comments?: unknown[]
+        subtasks?: unknown[]
+        dependents?: unknown[]
+        [key: string]: unknown
+    }
 
     const dependencies = task.dependencies || []
     const existingDependencyIds = dependencies.map((dep: any) => dep.dependsOnTask.id)
@@ -213,7 +237,7 @@ export default async function TaskPage({ params }: { params: Params }) {
                     {/* Comments Section */}
                     <div className="border rounded-lg p-4 bg-card shadow-sm">
                         <CommentSection 
-                            comments={task.comments || []} 
+                            comments={(task.comments || []) as any} 
                             taskId={task.id} 
                             projectId={projectId}
                             users={users.map((user: any) => ({

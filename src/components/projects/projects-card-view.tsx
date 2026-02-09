@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { deleteProject } from "@/app/actions/projects"
+import { projectsAdapter } from "@/lib/api/projects-adapter"
 import { useRouter } from "next/navigation"
 import { ProjectEditDialog } from "./project-edit-dialog"
 import { MarkUrgentDialog } from "./mark-urgent-dialog"
@@ -180,7 +180,7 @@ function ProjectCard({ project, progress, statusColors, canEdit, canDelete, canM
 
     const handleDelete = async () => {
         setDeleting(true)
-        const result = await deleteProject(project.id)
+        const result = await projectsAdapter.deleteProject(project.id)
         setDeleting(false)
         setDeleteDialogOpen(false)
 

@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { updateTask } from "@/app/actions/tasks"
+import { tasksAdapter } from "@/lib/api/tasks-adapter"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -60,7 +60,7 @@ export function TaskEditDialog({ task, projectId, users = [], open, onOpenChange
         // Add assigneeIds as JSON string
         formData.set("assigneeIds", JSON.stringify(selectedAssignees))
 
-        const result = await updateTask(task.id, formData)
+        const result = await tasksAdapter.updateTask(task.id, formData)
 
         setLoading(false)
         if (result?.success) {

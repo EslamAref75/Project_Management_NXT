@@ -1,4 +1,4 @@
-import { getProject } from "@/app/actions/projects"
+import { getProjectServer } from "@/lib/api/projects-server"
 import { getUsers } from "@/app/actions/users"
 import { getProjectStats } from "@/app/actions/stats"
 import { notFound } from "next/navigation"
@@ -38,9 +38,9 @@ export default async function ProjectDetailsPage({
 
     const session = await getServerSession(authOptions)
 
-    // Parallel data fetching
+    // Parallel data fetching (project from backend when configured)
     const [project, users, statsResult, productivityData] = await Promise.all([
-        getProject(projectId),
+        getProjectServer(projectId),
         getUsers(),
         getProjectStats(projectId),
         calculateProjectProductivity(projectId, {
@@ -56,11 +56,26 @@ export default async function ProjectDetailsPage({
         notFound()
     }
 
+    type ProjectShape = {
+        id: number
+        name: string
+        projectManagerId?: number | null
+        createdById?: number | null
+        projectTeams?: Array<{ team?: { teamLeadId?: number } }>
+        tasks?: Array<{ id?: number; status?: string }>
+        priority: string
+        urgentReason?: string | null
+        urgentMarkedAt?: Date | null
+        urgentMarkedBy?: { id: number; username: string } | null
+        [key: string]: unknown
+    }
+    const p = project as ProjectShape
+
     // Check permissions
     const isAdmin = session?.user.role === "admin"
-    const isProjectManager = project.projectManagerId === parseInt(session?.user.id || "0") ||
-        project.createdById === parseInt(session?.user.id || "0")
-    const isTeamLead = project.projectTeams?.some((pt: any) =>
+    const isProjectManager = p.projectManagerId === parseInt(session?.user.id || "0") ||
+        p.createdById === parseInt(session?.user.id || "0")
+    const isTeamLead = p.projectTeams?.some((pt: any) =>
         pt.team?.teamLeadId === parseInt(session?.user.id || "0")
     ) || false
     const canEdit = isAdmin || isProjectManager
@@ -68,10 +83,10 @@ export default async function ProjectDetailsPage({
 
     // Legacy Stats for Header (keep for now to ensure compatibility)
     // Ideally refactor ProjectHeader to take new stats object later
-    const total = project.tasks?.length || 0
-    const totalComp = project.tasks?.filter((t: any) => t.status === "completed").length || 0
-    const totalPending = project.tasks?.filter((t: any) => t.status === "pending").length || 0
-    const totalInProgress = project.tasks?.filter((t: any) => ["in_progress", "review"].includes(t.status)).length || 0
+    const total = p.tasks?.length || 0
+    const totalComp = p.tasks?.filter((t: any) => t.status === "completed").length || 0
+    const totalPending = p.tasks?.filter((t: any) => t.status === "pending").length || 0
+    const totalInProgress = p.tasks?.filter((t: any) => ["in_progress", "review"].includes(t.status)).length || 0
     const percentage = total > 0 ? Math.round((totalComp / total) * 100) : 0
 
     const legacyStats = {
@@ -93,7 +108,7 @@ export default async function ProjectDetailsPage({
     }
 
     // Fetch Forecasts for active tasks
-    const taskIds = project.tasks?.filter((t: any) => t.status !== 'completed').map((t: any) => t.id) || [];
+    const taskIds = p.tasks?.filter((t: any) => t.status !== 'completed').map((t: any) => t.id) || [];
     let forecasts = {};
     if (taskIds.length > 0) {
         const forecastsResult = await getForecastsForTasks(taskIds);
@@ -107,7 +122,7 @@ export default async function ProjectDetailsPage({
             {/* Header */}
             <div className="bg-background/95 backdrop-blur-sm border-b shadow-sm -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6">
                 <ProjectHeader
-                    project={project}
+                    project={p}
                     stats={legacyStats}
                     canEdit={canEdit}
                     canMarkUrgent={canMarkUrgent}
@@ -177,20 +192,20 @@ export default async function ProjectDetailsPage({
 
             {/* Forecasting Timeline */}
             <div className="px-1">
-                <ForecastingTimeline tasks={project.tasks || []} forecasts={forecasts} />
+                <ForecastingTimeline tasks={p.tasks || []} forecasts={forecasts} />
             </div>
 
             {/* Urgent Project Banner */}
-            {project.priority === "urgent" && session?.user?.id && (
+            {p.priority === "urgent" && session?.user?.id && (
                 <UrgentProjectBanner
-                    project={project}
+                    project={p}
                     userId={parseInt(session.user.id)}
                 />
             )}
 
             {/* Navigation Tabs */}
             <ProjectTabs
-                project={project}
+                project={p}
                 users={users}
                 stats={legacyStats}
             />

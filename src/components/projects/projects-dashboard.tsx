@@ -12,8 +12,7 @@ import { ProjectDialog } from "./project-dialog"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { getProjectsWithFilters } from "@/app/actions/projects"
-import { getProjectTypes } from "@/app/actions/project-types"
+import { projectsAdapter } from "@/lib/api/projects-adapter"
 import { SummaryStatsCards } from "@/components/dashboard/summary-stats-cards"
 import { Folder, PlayCircle, CheckCircle2, AlertTriangle } from "lucide-react"
 
@@ -71,8 +70,8 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users, stats 
     // Load project types on mount
     useEffect(() => {
         async function loadProjectTypes() {
-            const result = await getProjectTypes(false) // Only active types
-            if (result.success) {
+            const result = await projectsAdapter.getProjectTypes(false) // Only active types
+            if ("success" in result && result.success) {
                 setProjectTypes(result.projectTypes || [])
             }
         }
@@ -108,7 +107,7 @@ export function ProjectsDashboard({ initialProjects, initialTotal, users, stats 
         setError(null)
 
         try {
-            const result = await getProjectsWithFilters({
+            const result = await projectsAdapter.listProjects({
                 search: searchQuery,
                 category: categoryFilter,
                 status: statusFilter,

@@ -1,0 +1,271 @@
+openapi: 3.0.3
+info:
+  title: PMS Tasks API
+  version: 1.0.0
+  description: Tasks domain API for the Project Management System. Phase 6 contract.
+
+servers:
+  - url: /api/v1
+    description: Same-origin API (relative to app origin)
+
+paths:
+  /tasks:
+    get:
+      operationId: listTasks
+      summary: List tasks with optional filters
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+          description: Search by title or project/assignee name
+        - name: projectId
+          in: query
+          schema: { type: array, items: { type: string } }
+          style: form
+          description: Filter by project ID(s)
+        - name: status
+          in: query
+          schema: { type: array, items: { type: string } }
+          style: form
+          description: Filter by status (IDs or names)
+        - name: priority
+          in: query
+          schema: { type: array, items: { type: string, enum: [normal, high, urgent] } }
+          style: form
+        - name: assigneeId
+          in: query
+          schema: { type: string }
+          description: Filter by assignee user ID or "me"
+        - name: startDate
+          in: query
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date }
+        - name: dateFilterType
+          in: query
+          schema: { type: string, enum: [dueDate, createdDate], default: dueDate }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated list of tasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskListResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    post:
+      operationId: createTask
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskCreateInput" }
+      responses:
+        "200":
+          description: Task created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskMutationResponse" }
+        "400":
+        "401":
+        "403":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /tasks/{id}:
+    get:
+      operationId: getTask
+      summary: Get a single task by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Task details (or null if not found / no access)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskDetail" }
+        "401":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    patch:
+      operationId: updateTask
+      summary: Update a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskUpdateInput" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskMutationResponse" }
+        "401":
+        "403":
+        "404":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    delete:
+      operationId: deleteTask
+      summary: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskMutationResponse" }
+        "401":
+        "403":
+        "404":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /task-statuses:
+    get:
+      operationId: getTaskStatuses
+      summary: List task statuses (metadata)
+      parameters:
+        - name: includeInactive
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: List of task statuses
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskStatusesResponse" }
+        "401":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+        details: { type: string }
+
+    TaskListResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        tasks: { type: array, items: { $ref: "#/components/schemas/TaskListItem" } }
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+
+    TaskListItem:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        priority: { type: string }
+        status: { type: string }
+        dueDate: { type: string, format: date-time, nullable: true }
+        projectId: { type: integer }
+        createdAt: { type: string, format: date-time }
+        createdById: { type: integer, nullable: true }
+        assignees: { type: array, items: { $ref: "#/components/schemas/UserRef" } }
+        project: { type: object, properties: { id: { type: integer }, name: { type: string } } }
+        _count: { type: object, properties: { dependencies: { type: integer }, dependents: { type: integer } } }
+
+    UserRef:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        email: { type: string }
+        avatarUrl: { type: string, nullable: true }
+
+    TaskDetail:
+      type: object
+      nullable: true
+      description: Full task with assignees, project, status, attachments, comments, subtasks, dependencies; null if not found or no access
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        priority: { type: string }
+        status: { type: string }
+        dueDate: { type: string, format: date-time, nullable: true }
+        projectId: { type: integer }
+        createdAt: { type: string, format: date-time }
+        createdById: { type: integer, nullable: true }
+        startedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        taskStatusId: { type: integer, nullable: true }
+        teamId: { type: integer, nullable: true }
+        assignees: { type: array }
+        project: { type: object }
+        taskStatus: { type: object, nullable: true }
+        team: { type: object, nullable: true }
+        creator: { type: object, nullable: true }
+        attachments: { type: array }
+        comments: { type: array }
+        subtasks: { type: array }
+        dependencies: { type: array }
+        dependents: { type: array }
+        _count: { type: object }
+
+    TaskCreateInput:
+      type: object
+      required: [title, projectId]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        priority: { type: string }
+        projectId: { type: integer }
+        assigneeIds: { type: array, items: { type: integer } }
+        dueDate: { type: string }
+
+    TaskUpdateInput:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        priority: { type: string }
+        status: { type: string }
+        taskStatusId: { type: integer, nullable: true }
+        assigneeIds: { type: array, items: { type: integer } }
+        dueDate: { type: string }
+
+    TaskMutationResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        error: { type: string }
+
+    TaskStatusesResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        taskStatuses: { type: array }
+        error: { type: string }

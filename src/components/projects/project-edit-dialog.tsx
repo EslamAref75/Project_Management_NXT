@@ -19,9 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { updateProject } from "@/app/actions/projects"
-import { getProjectTypes } from "@/app/actions/project-types"
-import { getProjectStatuses } from "@/app/actions/project-statuses"
+import { projectsAdapter } from "@/lib/api/projects-adapter"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -80,14 +78,14 @@ export function ProjectEditDialog({ project, open, onOpenChange }: ProjectEditDi
             setLoadingStatuses(true)
             
             const [typesResult, statusesResult] = await Promise.all([
-                getProjectTypes(true), // Include inactive to show current type
-                getProjectStatuses(true) // Include inactive to show current status
+                projectsAdapter.getProjectTypes(true), // Include inactive to show current type
+                projectsAdapter.getProjectStatuses(true) // Include inactive to show current status
             ])
             
             setLoadingTypes(false)
             setLoadingStatuses(false)
             
-            if (typesResult.success) {
+            if ("success" in typesResult && typesResult.success) {
                 const types = typesResult.projectTypes || []
                 setProjectTypes(types)
                 
@@ -103,7 +101,7 @@ export function ProjectEditDialog({ project, open, onOpenChange }: ProjectEditDi
                 }
             }
             
-            if (statusesResult.success) {
+            if ("success" in statusesResult && statusesResult.success) {
                 const allStatuses = statusesResult.projectStatuses || []
                 
                 // Only show active statuses in the dropdown
@@ -168,14 +166,14 @@ export function ProjectEditDialog({ project, open, onOpenChange }: ProjectEditDi
         setLoading(true)
         const formData = new FormData(event.currentTarget)
 
-        const result = await updateProject(project.id, formData)
+        const result = await projectsAdapter.updateProject(project.id, formData)
 
         setLoading(false)
         if (result?.success) {
             onOpenChange(false)
             router.refresh()
         } else {
-            alert(result?.error + (result?.details ? `: ${result.details}` : ""))
+            alert(result?.error + ((result as { details?: string })?.details ? `: ${(result as { details?: string }).details}` : ""))
         }
     }
 
