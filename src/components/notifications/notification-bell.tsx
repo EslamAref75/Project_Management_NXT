@@ -11,32 +11,24 @@ import {
 import { NotificationList } from "./notification-list"
 import { getUnreadNotificationCount } from "@/app/actions/notifications"
 import { useSession } from "next-auth/react"
+import { usePollWhenVisible } from "@/hooks/use-poll-when-visible"
 
 export function NotificationBell() {
     const { data: session } = useSession()
     const [unreadCount, setUnreadCount] = useState(0)
     const [isOpen, setIsOpen] = useState(false)
 
-    useEffect(() => {
-        // Only run on client-side
-        if (typeof window === 'undefined') return
-        if (!session) return
-
-        // Fetch unread count on mount
-        const fetchCount = async () => {
-            const result = await getUnreadNotificationCount()
-            if (result.success) {
-                setUnreadCount(result.count)
-            }
+    const fetchCount = async (): Promise<boolean> => {
+        if (!session) return true
+        const result = await getUnreadNotificationCount()
+        if (result.success) {
+            setUnreadCount(result.count)
+            return true
         }
+        return false
+    }
 
-        fetchCount()
-
-        // Poll for new notifications every 30 seconds
-        const interval = setInterval(fetchCount, 30000)
-
-        return () => clearInterval(interval)
-    }, [session])
+    usePollWhenVisible(fetchCount, { intervalMs: 30000 })
 
     // Listen for custom notification events
     useEffect(() => {

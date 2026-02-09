@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow } from "date-fns"
 import { Check, CheckCheck, Trash2, Bell } from "lucide-react"
 import { useNotificationSound } from "@/hooks/use-notification-sound"
+import { usePollWhenVisible } from "@/hooks/use-poll-when-visible"
 
 interface NotificationListProps {
     onClose?: () => void
@@ -23,7 +24,7 @@ export function NotificationList({ onClose, onCountChange }: NotificationListPro
         unreadCount: 0
     })
 
-    const loadNotifications = async () => {
+    const loadNotifications = async (): Promise<boolean> => {
         const result = await getNotifications()
         if (result.success) {
             const prevUnreadCount = previousDataRef.current.unreadCount
@@ -54,18 +55,10 @@ export function NotificationList({ onClose, onCountChange }: NotificationListPro
             }
         }
         setLoading(false)
+        return !!result.success
     }
 
-    useEffect(() => {
-        // Only run on client-side
-        if (typeof window === 'undefined') return
-
-        loadNotifications()
-
-        // Poll for new notifications every 30 seconds (standardized interval)
-        const interval = setInterval(loadNotifications, 30000)
-        return () => clearInterval(interval)
-    }, [])
+    usePollWhenVisible(loadNotifications, { intervalMs: 30000 })
 
     const handleMarkAsRead = async (id: number) => {
         const result = await markNotificationAsRead(id)
